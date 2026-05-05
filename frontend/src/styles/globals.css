@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  font-family: 'Nunito', 'Baloo 2', sans-serif;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(135deg, #e0f7f6 0%, #fff5f0 100%);
+}
+
+/* Accessible touch targets */
+@layer components {
+  .touch-target {
+    @apply min-w-touch min-h-touch flex items-center justify-center cursor-pointer;
+  }
+
+  .card-base {
+    @apply rounded-lg shadow-md transition-all duration-200;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200 touch-target;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-secondary text-gray-800 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200 touch-target;
+  }
+}
