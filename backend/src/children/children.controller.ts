@@ -8,6 +8,11 @@ import { Child } from '../entities/child.entity';
 export class ChildrenController {
   constructor(private childrenService: ChildrenService) {}
 
+  @Get('demo')
+  async getDemoChildren(): Promise<Child[]> {
+    return this.childrenService.getDemoChildren();
+  }
+
   @Post()
   @UseGuards(JwtAuthGuard)
   async createChild(@Req() req: any, @Body() createChildDto: CreateChildDto): Promise<Child> {

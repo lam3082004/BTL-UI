@@ -15,7 +15,10 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
-  background: linear-gradient(135deg, #e0f7f6 0%, #fff5f0 100%);
+}
+
+body {
+  background-color: #F0F7F7;
 }
 
 /* Accessible touch targets */
@@ -25,14 +28,53 @@ body,
   }
 
   .card-base {
-    @apply rounded-lg shadow-md transition-all duration-200;
+    @apply rounded-lg shadow-soft transition-all duration-200;
+  }
+
+  .card-rounded {
+    @apply rounded-3xl shadow-soft transition-all duration-200;
   }
 
   .btn-primary {
-    @apply px-6 py-3 bg-primary text-white rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200 touch-target;
+    @apply px-6 py-3 bg-teal text-white rounded-full font-semibold hover:shadow-lg transition-all duration-200 touch-target;
   }
 
   .btn-secondary {
-    @apply px-6 py-3 bg-secondary text-gray-800 rounded-lg font-semibold hover:bg-opacity-90 transition-all duration-200 touch-target;
+    @apply px-6 py-3 bg-white border-2 border-teal text-teal rounded-full font-semibold hover:bg-teal hover:text-white transition-all duration-200 touch-target;
+  }
+
+  .btn-tertiary {
+    @apply px-6 py-3 bg-peach text-white rounded-full font-semibold hover:shadow-lg transition-all duration-200 touch-target;
+  }
+
+  /* Page background gradients */
+  .page-bg-child {
+    @apply bg-gradient-to-b from-teal/20 to-blue/20;
+  }
+
+  .page-bg-parent {
+    @apply bg-gradient-to-br from-blue/10 to-peach/10;
+  }
+
+  /* Child card styles */
+  .child-card-bo {
+    @apply bg-peach/30 border-4 border-peach rounded-3xl;
+  }
+
+  .child-card-tho {
+    @apply bg-blue/30 border-4 border-blue rounded-3xl;
+  }
+
+  .child-card-bi {
+    @apply bg-green/30 border-4 border-green rounded-3xl;
+  }
+
+  .child-card-sao {
+    @apply bg-pink/30 border-4 border-pink rounded-3xl;
+  }
+
+  /* Label/badge style */
+  .label-pill {
+    @apply px-4 py-2 rounded-full bg-white text-text text-sm font-semibold shadow-soft;
   }
 }

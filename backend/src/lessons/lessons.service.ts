@@ -6,7 +6,7 @@ import { QuestionResult } from '../entities/question-result.entity';
 import { Child, MathOperation } from '../entities/child.entity';
 import { CreateSessionDto, SaveResultDto, GenerateQuestionDto } from './dto';
 
-interface MathQuestion {
+export interface MathQuestion {
   expression: string;
   operand1: number;
   operand2: number;

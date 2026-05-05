@@ -35,22 +35,25 @@ export const FruitBasket: React.FC<FruitBasketProps> = ({
   };
 
   return (
-    <motion.div
+    <div
       ref={setNodeRef}
-      className={`touch-target card-base flex flex-col items-center justify-center p-8 border-4 transition-all ${
+      className={`flex flex-col items-center justify-center p-8 border-4 transition-all rounded-lg ${
         isOver ? 'border-success bg-success/10 scale-105' : 'border-primary bg-white'
       } ${isWrong ? 'border-warning' : ''}`}
-      variants={isWrong ? shakeVariants : undefined}
-      animate={isWrong ? 'shake' : 'initial'}
-      onAnimationComplete={handleWrongDrop}
     >
-      <div className="text-6xl mb-4">🧺</div>
-      <div className="text-2xl font-bold text-primary">
-        {droppedCount}/{targetCount}
-      </div>
-      <div className="text-sm text-gray-600 mt-2">
-        {droppedCount === targetCount && droppedCount > 0 ? '✅ Đúng rồi!' : 'Kéo quả vào đây'}
-      </div>
-    </motion.div>
+      <motion.div
+        variants={isWrong ? shakeVariants : undefined}
+        animate={isWrong ? 'shake' : 'initial'}
+        onAnimationComplete={handleWrongDrop}
+      >
+        <div className="text-6xl mb-4">🧺</div>
+        <div className="text-2xl font-bold text-primary">
+          {droppedCount}/{targetCount}
+        </div>
+        <div className="text-sm text-gray-600 mt-2">
+          {droppedCount === targetCount && droppedCount > 0 ? '✅ Đúng rồi!' : 'Kéo quả vào đây'}
+        </div>
+      </motion.div>
+    </div>
   );
 };

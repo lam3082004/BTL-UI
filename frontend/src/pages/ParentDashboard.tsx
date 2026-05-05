@@ -45,76 +45,104 @@ export const ParentDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl text-primary">Đang tải...</div>
+      <div className="min-h-screen flex items-center justify-center bg-bg">
+        <div className="text-2xl text-teal font-bold">Đang tải...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen px-4 py-8 bg-gradient-to-b from-primary/10 to-secondary/10">
+    <div className="min-h-screen px-4 py-8 bg-gradient-to-b from-teal/10 to-blue/10">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto mb-8"
+        className="max-w-4xl mx-auto mb-12"
       >
         <div className="flex items-center justify-between mb-8">
-          <h1 className="text-4xl font-bold text-primary">📊 Bảng Điều Khiển Phụ Huynh</h1>
+          <div>
+            <p className="text-teal text-sm font-bold">NumSense</p>
+            <h1 className="text-4xl font-bold text-text">BẢNG ĐIỀU KHIỂN</h1>
+          </div>
           <button
             onClick={handleLogout}
-            className="px-4 py-2 bg-warning text-white rounded-lg hover:bg-opacity-90 transition"
+            className="text-3xl text-teal hover:scale-110 transition"
+            title="Đăng xuất"
           >
-            Đăng xuất
+            ⚙️
           </button>
         </div>
       </motion.div>
 
-      {/* Children List */}
+      {/* Main Content */}
       <div className="max-w-4xl mx-auto">
+        {/* Section Title */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="mb-8"
+        >
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-text">DANH SÁCH TRẺ</h2>
+            <button
+              onClick={() => navigate('/add-child')}
+              className="text-4xl text-teal hover:scale-110 transition"
+              title="Thêm trẻ mới"
+            >
+              ➕
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Children List */}
         {children.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="bg-white rounded-lg p-8 text-center shadow-md"
+            className="bg-white rounded-3xl p-8 text-center shadow-soft"
           >
-            <p className="text-gray-600 mb-4">Chưa có hồ sơ trẻ nào</p>
+            <p className="text-gray-600 mb-4 text-lg">Chưa có hồ sơ trẻ nào</p>
             <button
               onClick={() => navigate('/add-child')}
-              className="btn-primary bg-primary text-white"
+              className="btn-primary"
             >
               ➕ Thêm trẻ mới
             </button>
           </motion.div>
         ) : (
-          <motion.div className="grid gap-4">
+          <motion.div className="grid gap-4 mb-12">
             {children.map((child, idx) => (
               <motion.div
                 key={child.id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className="card-base bg-white border-2 border-primary p-6 shadow-md"
+                className="card-rounded bg-white border-2 border-gray-200 p-6 shadow-soft hover:shadow-lg transition"
               >
                 {/* Child Header */}
                 <button
                   onClick={() =>
                     setExpandedChild(expandedChild === child.id ? null : child.id)
                   }
-                  className="w-full text-left flex items-center justify-between"
+                  className="w-full text-left flex items-center justify-between group"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="text-4xl">{child.avatar || '👧'}</div>
+                    <div className="text-4xl">
+                      {child.name === 'Bé Bo' ? '📖' : child.name === 'Bé Thỏ' ? '🐰' : child.name === 'Bé Bi' ? '🎈' : '✨'}
+                    </div>
                     <div>
-                      <h3 className="text-2xl font-bold text-primary">{child.name}</h3>
+                      <h3 className="text-2xl font-bold text-text">{child.name}</h3>
                       <p className="text-sm text-gray-600">
                         Phạm vi: {child.minNumber}-{child.maxNumber}
                       </p>
                     </div>
                   </div>
-                  <div className="text-2xl">
-                    {expandedChild === child.id ? '▼' : '▶'}
-                  </div>
+                  <motion.div 
+                    className="text-2xl text-teal"
+                    animate={{ rotate: expandedChild === child.id ? 180 : 0 }}
+                  >
+                    ▼
+                  </motion.div>
                 </button>
 
                 {/* Expanded Options */}
@@ -123,19 +151,25 @@ export const ParentDashboard: React.FC = () => {
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="mt-6 pt-6 border-t-2 border-primary flex gap-4 flex-wrap"
+                    className="mt-6 pt-6 border-t-2 border-gray-200 flex gap-4 flex-wrap"
                   >
                     <button
                       onClick={() => handleGoToReport(child.id)}
-                      className="btn-primary bg-success text-white"
+                      className="btn-primary"
                     >
                       📈 Báo cáo tiến độ
                     </button>
                     <button
                       onClick={() => handleGoToConfig(child.id)}
-                      className="btn-secondary bg-secondary text-gray-800"
+                      className="btn-secondary"
                     >
                       ⚙️ Cấu hình
+                    </button>
+                    <button
+                      onClick={() => {/* Delete child */}}
+                      className="px-4 py-2 text-warning hover:text-red-600 transition font-semibold text-lg"
+                    >
+                      🗑️ Xóa
                     </button>
                   </motion.div>
                 )}
@@ -143,6 +177,30 @@ export const ParentDashboard: React.FC = () => {
             ))}
           </motion.div>
         )}
+
+        {/* Stats Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="grid grid-cols-3 gap-4 mt-12"
+        >
+          <div className="bg-white rounded-3xl p-6 text-center shadow-soft">
+            <div className="text-4xl mb-2">🐥</div>
+            <p className="text-4xl font-bold text-teal">{children.length}</p>
+            <p className="text-sm text-gray-600 mt-1">Tổng trẻ</p>
+          </div>
+          <div className="bg-white rounded-3xl p-6 text-center shadow-soft">
+            <div className="text-4xl mb-2">📋</div>
+            <p className="text-4xl font-bold text-teal">{Math.max(0, children.length - 1)}</p>
+            <p className="text-sm text-gray-600 mt-1">Đang học</p>
+          </div>
+          <div className="bg-white rounded-3xl p-6 text-center shadow-soft">
+            <div className="text-4xl mb-2">🏆</div>
+            <p className="text-4xl font-bold text-teal">{Math.max(0, Math.floor(children.length / 2))}</p>
+            <p className="text-sm text-gray-600 mt-1">Hoàn thành</p>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

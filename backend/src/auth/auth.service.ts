@@ -37,7 +37,7 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
-  async validateJwt(payload: any): Promise<Parent> {
+  async validateJwt(payload: any): Promise<Parent | null> {
     return this.parentRepository.findOne({
       where: { id: payload.sub },
     });

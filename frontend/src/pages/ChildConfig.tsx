@@ -4,6 +4,33 @@ import { motion } from 'framer-motion';
 import client from '../api/client';
 import { Child, MathOperation } from '../types';
 
+// Operation icons and colors
+const operationConfig: Record<MathOperation, { icon: string; color: string; label: string }> = {
+  [MathOperation.ADDITION]: { icon: '➕', color: 'bg-orange-500', label: 'Cộng' },
+  [MathOperation.SUBTRACTION]: { icon: '➖', color: 'bg-blue-500', label: 'Trừ' },
+  [MathOperation.MULTIPLICATION]: { icon: '✖️', color: 'bg-gray-500', label: 'Nhân' },
+  [MathOperation.DIVISION]: { icon: '➗', color: 'bg-gray-500', label: 'Chia' },
+};
+
+// iOS-style toggle component
+const Toggle: React.FC<{ enabled: boolean; onChange: (value: boolean) => void }> = ({
+  enabled,
+  onChange,
+}) => (
+  <button
+    onClick={() => onChange(!enabled)}
+    className={`relative inline-flex h-8 w-16 rounded-full transition-colors ${
+      enabled ? 'bg-teal' : 'bg-gray-300'
+    }`}
+  >
+    <motion.div
+      className="absolute top-1 w-6 h-6 rounded-full bg-white shadow-md"
+      animate={{ left: enabled ? '30px' : '2px' }}
+      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+    />
+  </button>
+);
+
 export const ChildConfig: React.FC = () => {
   const { childId } = useParams<{ childId: string }>();
   const navigate = useNavigate();
@@ -62,104 +89,136 @@ export const ChildConfig: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-2xl text-primary">Đang tải...</div>
+      <div className="min-h-screen flex items-center justify-center bg-bg">
+        <div className="text-2xl text-teal font-bold">Đang tải...</div>
       </div>
     );
   }
 
+  const childIcon = child?.name === 'Bé Bo' ? '📖' : child?.name === 'Bé Thỏ' ? '🐰' : child?.name === 'Bé Bi' ? '🎈' : '✨';
+
   return (
-    <div className="min-h-screen px-4 py-8 bg-gradient-to-b from-primary/10 to-secondary/10">
+    <div className="min-h-screen px-4 py-8 bg-gradient-to-b from-teal/10 to-blue/10">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="max-w-2xl mx-auto"
       >
         {/* Header */}
-        <button
-          onClick={() => navigate('/parent-dashboard')}
-          className="mb-6 text-primary hover:underline"
-        >
-          ← Quay lại
-        </button>
-
-        <h1 className="text-4xl font-bold text-primary mb-2">⚙️ Cấu Hình</h1>
-        {child && <p className="text-gray-600 mb-8">{child.name}</p>}
+        <div className="flex justify-between items-center mb-12">
+          <button
+            onClick={() => navigate('/parent-dashboard')}
+            className="text-3xl text-teal hover:scale-110 transition"
+          >
+            ←
+          </button>
+          <div className="text-center flex-1">
+            <p className="text-gray-600 text-sm font-semibold">CÀI ĐẶT CẤU HÌNH</p>
+            <h1 className="text-3xl font-bold text-text">{child?.name}</h1>
+          </div>
+          <div className="text-4xl">{childIcon}</div>
+        </div>
 
         {/* Message */}
         {message && (
-          <div
-            className={`mb-6 p-4 rounded-lg text-white ${
-              message.type === 'success' ? 'bg-success' : 'bg-warning'
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`mb-6 p-4 rounded-2xl text-white text-center font-semibold ${
+              message.type === 'success' ? 'bg-green-500' : 'bg-warning'
             }`}
           >
             {message.text}
-          </div>
+          </motion.div>
         )}
 
         {/* Config Form */}
         <motion.div
-          className="bg-white rounded-lg p-8 shadow-md space-y-8"
+          className="bg-white rounded-3xl p-8 shadow-soft space-y-8"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
         >
           {/* Number Range Sliders */}
           <div>
-            <label className="block text-lg font-semibold text-primary mb-4">
-              📊 Phạm Vi Số (tối thiểu - tối đa)
+            <label className="flex items-center gap-2 text-lg font-bold text-text mb-6">
+              <span className="bg-blue text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">
+                📊
+              </span>
+              Phạm vi số
             </label>
-            <div className="space-y-4">
+
+            <div className="space-y-6">
+              {/* Min Number Slider */}
               <div>
-                <label className="block text-sm text-gray-600 mb-2">
-                  Số tối thiểu: <strong>{minNumber}</strong>
-                </label>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm font-semibold text-text">Số nhỏ nhất</label>
+                  <span className="text-2xl font-bold text-teal">{minNumber}</span>
+                </div>
                 <input
                   type="range"
-                  min="0"
-                  max={Math.max(20, maxNumber - 1)}
+                  min="1"
+                  max="50"
                   value={minNumber}
                   onChange={(e) => setMinNumber(parseInt(e.target.value))}
-                  className="w-full accent-primary"
+                  className="w-full h-3 bg-blue/30 rounded-full appearance-none cursor-pointer accent-teal"
                 />
               </div>
+
+              {/* Max Number Slider */}
               <div>
-                <label className="block text-sm text-gray-600 mb-2">
-                  Số tối đa: <strong>{maxNumber}</strong>
-                </label>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm font-semibold text-text">Số lớn nhất</label>
+                  <span className="text-2xl font-bold text-teal">{maxNumber}</span>
+                </div>
                 <input
                   type="range"
-                  min={Math.min(1, minNumber + 1)}
-                  max="100"
+                  min="10"
+                  max="1000"
                   value={maxNumber}
                   onChange={(e) => setMaxNumber(parseInt(e.target.value))}
-                  className="w-full accent-primary"
+                  className="w-full h-3 bg-green/30 rounded-full appearance-none cursor-pointer accent-teal"
                 />
               </div>
             </div>
           </div>
 
           {/* Operations Toggle */}
-          <div>
-            <label className="block text-lg font-semibold text-primary mb-4">
-              ✏️ Loại Phép Tính
+          <div className="border-t-2 border-gray-200 pt-8">
+            <label className="flex items-center gap-2 text-lg font-bold text-text mb-6">
+              <span className="bg-green text-white rounded-full w-8 h-8 flex items-center justify-center text-sm">
+                ➕
+              </span>
+              Phép tính được phép
             </label>
-            <div className="grid grid-cols-2 gap-4">
-              {Object.values(MathOperation).map((op) => (
-                <button
-                  key={op}
-                  onClick={() => handleOperationToggle(op)}
-                  className={`p-4 rounded-lg font-semibold transition ${
-                    operations.includes(op)
-                      ? 'bg-primary text-white'
-                      : 'bg-gray-100 text-gray-600 border-2 border-gray-300'
-                  }`}
-                >
-                  {op === MathOperation.ADDITION && '➕ Cộng'}
-                  {op === MathOperation.SUBTRACTION && '➖ Trừ'}
-                  {op === MathOperation.MULTIPLICATION && '✖️ Nhân'}
-                  {op === MathOperation.DIVISION && '➗ Chia'}
-                </button>
-              ))}
+
+            <div className="space-y-4">
+              {Object.values(MathOperation).map((op) => {
+                const config = operationConfig[op];
+                const isEnabled = operations.includes(op);
+                return (
+                  <div key={op} className="flex items-center justify-between bg-gray-50 p-4 rounded-2xl">
+                    {/* Operation Icon & Label */}
+                    <div className="flex items-center gap-4">
+                      <div className={`${config.color} text-white rounded-full w-10 h-10 flex items-center justify-center text-xl`}>
+                        {config.icon}
+                      </div>
+                      <span className="font-semibold text-text">{config.label}</span>
+                    </div>
+
+                    {/* Toggle Switch */}
+                    <Toggle
+                      enabled={isEnabled}
+                      onChange={(value) => {
+                        if (value) {
+                          setOperations([...operations, op]);
+                        } else {
+                          setOperations(operations.filter((o) => o !== op));
+                        }
+                      }}
+                    />
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -167,9 +226,9 @@ export const ChildConfig: React.FC = () => {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="btn-primary bg-success text-white w-full py-4 text-lg font-semibold disabled:opacity-50"
+            className="btn-primary w-full py-4 text-lg font-bold disabled:opacity-50 disabled:cursor-not-allowed mt-8"
           >
-            {isSaving ? 'Đang lưu...' : '💾 Lưu Cấu Hình'}
+            {isSaving ? '⏳ Đang lưu...' : '💾 Lưu cài đặt'}
           </button>
         </motion.div>
       </motion.div>

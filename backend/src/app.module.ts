@@ -18,17 +18,30 @@ import { ReportsModule } from './reports/reports.module';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DATABASE_HOST || 'db',
-      port: parseInt(process.env.DATABASE_PORT || '5432'),
-      username: process.env.DATABASE_USER || 'postgres',
-      password: process.env.DATABASE_PASSWORD || 'password',
-      database: process.env.DATABASE_NAME || 'numsense',
-      entities: [Parent, Child, LessonSession, QuestionResult],
-      synchronize: process.env.NODE_ENV !== 'production',
-      logging: process.env.NODE_ENV === 'development',
-    }),
+    // Use SQLite for quick local development when USE_SQLITE=true
+    TypeOrmModule.forRoot(
+      process.env.USE_SQLITE === 'true'
+        ? {
+            type: 'sqlite',
+            database: process.env.SQLITE_DB_PATH || 'dev.sqlite',
+            entities: [Parent, Child, LessonSession, QuestionResult],
+            synchronize: true,
+            logging: false,
+          }
+        : {
+            type: 'postgres',
+            // Prefer a full DATABASE_URL if provided (useful for remote DBs)
+            url: process.env.DATABASE_URL || undefined,
+            host: process.env.DATABASE_HOST || 'db',
+            port: parseInt(process.env.DATABASE_PORT || '5432'),
+            username: process.env.DATABASE_USER || 'postgres',
+            password: process.env.DATABASE_PASSWORD || 'password',
+            database: process.env.DATABASE_NAME || 'numsense',
+            entities: [Parent, Child, LessonSession, QuestionResult],
+            synchronize: process.env.NODE_ENV !== 'production',
+            logging: process.env.NODE_ENV === 'development',
+          },
+    ),
     TypeOrmModule.forFeature([Parent, Child, LessonSession, QuestionResult]),
     AuthModule,
     ChildrenModule,

@@ -5,9 +5,20 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // Design System Colors
+        bg: '#F0F7F7',
+        'bg-light': '#FFFFFF',
+        teal: '#5BBFB5',
+        peach: '#F9A870',
+        blue: '#A8D8EA',
+        green: '#B8E0B0',
+        pink: '#F4B8C8',
+        yellow: '#FFD166',
+        text: '#2D3436',
+        // Legacy primary/secondary (for compatibility)
         primary: '#5BBFB5', // teal
-        secondary: '#FFD89B', // peach
-        accent: '#FFF5D6', // pale yellow
+        secondary: '#F9A870', // peach
+        accent: '#F0F7F7', // light mint background
         success: '#95D5B2', // soft green
         warning: '#FFB4B4', // soft red
       },
@@ -19,6 +30,12 @@ const config: Config = {
       },
       minHeight: {
         touch: '64px',
+      },
+      borderRadius: {
+        '3xl': '24px',
+      },
+      boxShadow: {
+        'soft': '0 4px 16px rgba(0, 0, 0, 0.08)',
       },
     },
   },

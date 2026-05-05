@@ -23,8 +23,8 @@ export const ParentLoginPage: React.FC = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
+        staggerChildren: 0.15,
+        delayChildren: 0.2,
       },
     },
   };
@@ -35,31 +35,36 @@ export const ParentLoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 bg-gradient-to-b from-primary/10 to-secondary/10">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 bg-gradient-to-b from-teal/10 to-blue/10">
       <motion.div
         className="text-center max-w-md"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        {/* Title */}
-        <motion.h1 variants={itemVariants} className="text-5xl font-bold text-primary mb-4">
-          👨‍👩‍👧
-        </motion.h1>
+        {/* Logo/Branding */}
+        <motion.div variants={itemVariants} className="mb-8">
+          <p className="text-teal text-sm font-bold">NumSense</p>
+          <h1 className="text-6xl font-bold text-text">👨‍👩‍👧‍👦</h1>
+        </motion.div>
 
-        <motion.h2 variants={itemVariants} className="text-4xl font-bold text-primary mb-4">
-          Khu Vực Phụ Huynh
+        {/* Title */}
+        <motion.h2 variants={itemVariants} className="text-4xl font-bold text-text mb-2">
+          PHẦN PHỤ HUYNH
         </motion.h2>
 
-        <motion.p variants={itemVariants} className="text-lg text-gray-600 mb-8">
-          Đăng nhập để xem tiến độ học tập của con bạn
+        {/* Subtitle */}
+        <motion.p variants={itemVariants} className="text-lg text-gray-600 mb-12">
+          Đăng nhập để xem tiến độ học tập của con
         </motion.p>
 
         {/* Google Login Button */}
         <motion.button
           variants={itemVariants}
           onClick={handleGoogleLogin}
-          className="flex items-center justify-center gap-3 w-full max-w-sm bg-white border-2 border-primary text-primary text-lg font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all mb-6"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="btn-primary w-full max-w-sm text-lg font-bold py-4 px-6 mb-6 flex items-center justify-center gap-3 shadow-soft hover:shadow-lg transition-shadow"
         >
           <svg className="w-6 h-6" viewBox="0 0 24 24">
             <path
@@ -86,7 +91,7 @@ export const ParentLoginPage: React.FC = () => {
         <motion.button
           variants={itemVariants}
           onClick={() => navigate('/')}
-          className="text-primary hover:underline mt-4"
+          className="text-teal hover:text-teal/80 transition text-lg font-semibold"
         >
           ← Quay lại trang chủ
         </motion.button>

@@ -1,15 +1,53 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Child, MathOperation } from '../entities/child.entity';
+import { Parent } from '../entities/parent.entity';
 import { CreateChildDto, UpdateChildConfigDto } from './dto';
 
 @Injectable()
-export class ChildrenService {
+export class ChildrenService implements OnModuleInit {
   constructor(
     @InjectRepository(Child)
     private childRepository: Repository<Child>,
+    @InjectRepository(Parent)
+    private parentRepository: Repository<Parent>,
   ) {}
+
+  async onModuleInit() {
+    const childCount = await this.childRepository.count();
+    if (childCount > 0) {
+      return;
+    }
+
+    const demoParent = this.parentRepository.create({
+      googleId: 'demo-parent',
+      email: 'demo@numsense.local',
+      name: 'Demo Parent',
+    });
+    const savedParent = await this.parentRepository.save(demoParent);
+
+    await this.childRepository.save(
+      this.childRepository.create([
+        {
+          name: 'Bé Minh',
+          avatar: '👧',
+          parentId: savedParent.id,
+          minNumber: 1,
+          maxNumber: 10,
+          allowedOperations: [MathOperation.ADDITION],
+        },
+        {
+          name: 'Bé Hùng',
+          avatar: '👦',
+          parentId: savedParent.id,
+          minNumber: 1,
+          maxNumber: 20,
+          allowedOperations: [MathOperation.ADDITION, MathOperation.SUBTRACTION],
+        },
+      ]),
+    );
+  }
 
   async createChild(parentId: string, createChildDto: CreateChildDto): Promise<Child> {
     const child = this.childRepository.create({
@@ -24,6 +62,12 @@ export class ChildrenService {
     return this.childRepository.find({
       where: { parentId },
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getDemoChildren(): Promise<Child[]> {
+    return this.childRepository.find({
+      order: { createdAt: 'ASC' },
     });
   }
 
