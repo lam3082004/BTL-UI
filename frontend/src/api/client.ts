@@ -1,24 +1,24 @@
 import axios from 'axios';
 
-const inferApiBaseUrl = () => {
-  if (typeof window === 'undefined') {
-    return 'http://localhost:3001';
+const inferApiBaseUrl = (): string => {
+  if (typeof window === 'undefined') return 'http://localhost:3001';
+  const { protocol, hostname } = window.location;
+  // LAN testing on a phone: backend is on same host at :3001
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || /^192\.168\./.test(hostname)) {
+    return `${protocol}//${hostname}:3001`;
   }
-
-  // When testing on a phone via LAN (e.g. http://192.168.x.x:5173),
-  // the backend is typically on the same host at :3001.
-  return `${window.location.protocol}//${window.location.hostname}:3001`;
+  // Production / staging on a real domain: must use VITE_API_BASE_URL
+  return 'http://localhost:3001';
 };
 
-const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
-const shouldIgnoreLocalhostEnv =
-  typeof window !== 'undefined' &&
-  window.location.hostname !== 'localhost' &&
-  window.location.hostname !== '127.0.0.1' &&
+const envBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+const isEnvUrlLocal =
   typeof envBaseUrl === 'string' &&
   /\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(envBaseUrl.trim());
 
-const baseURL = !envBaseUrl || shouldIgnoreLocalhostEnv ? inferApiBaseUrl() : envBaseUrl;
+// On a real (non-localhost) domain, a localhost env URL is useless — fall back to infer
+const baseURL =
+  envBaseUrl && !isEnvUrlLocal ? envBaseUrl.trim().replace(/\/$/, '') : inferApiBaseUrl();
 
 const client = axios.create({
   baseURL,
