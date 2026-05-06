@@ -19,7 +19,7 @@ export const SplashPage: React.FC = () => {
   ];
 
   return (
-    <div className="h-screen w-full flex flex-col bg-gradient-to-b from-teal/20 to-blue/20">
+    <div className="min-h-[100dvh] w-full flex flex-col bg-gradient-to-b from-teal/20 to-blue/20">
       {/* TOP ZONE - DÀNH CHO BÉ */}
       <motion.div
         onClick={() => navigate('/child-select')}

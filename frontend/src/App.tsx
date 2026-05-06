@@ -11,6 +11,7 @@ import { ParentDashboard } from './pages/ParentDashboard';
 import { ProgressReport } from './pages/ProgressReport';
 import { ChildConfig } from './pages/ChildConfig';
 import { ParentLoginPage } from './pages/ParentLoginPage';
+import { PwaStatusBanner } from './components/PwaStatusBanner';
 
 const queryClient = new QueryClient();
 
@@ -18,6 +19,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <PwaStatusBanner />
         <Routes>
           {/* Child Routes */}
           <Route path="/" element={<SplashPage />} />

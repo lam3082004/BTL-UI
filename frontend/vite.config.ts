@@ -8,6 +8,18 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      includeAssets: [
+        'favicon.svg',
+        'favicon-32x32.png',
+        'favicon-16x16.png',
+        'apple-touch-icon.png',
+        'numsense-icon-192.png',
+        'numsense-icon-512.png',
+        'pwa-192x192.png',
+        'pwa-512x512.png',
+        'icons/icon-192.svg',
+        'icons/icon-512.svg',
+      ],
       manifest: {
         name: 'NumSense',
         short_name: 'NumSense',
@@ -19,13 +31,13 @@ export default defineConfig({
         start_url: '/',
         icons: [
           {
-            src: '/pwa-192x192.png',
+            src: '/numsense-icon-192.png',
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any',
           },
           {
-            src: '/pwa-512x512.png',
+            src: '/numsense-icon-512.png',
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable',
@@ -33,6 +45,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        navigateFallback: '/index.html',
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/.*\.(jpg|jpeg|png|gif|svg|webp)$/i,
@@ -46,6 +59,10 @@ export default defineConfig({
             },
           },
         ],
+      },
+      devOptions: {
+        // Disable SW in dev to avoid stale-cache issues on phones.
+        enabled: false,
       },
     }),
   ],

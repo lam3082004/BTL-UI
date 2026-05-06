@@ -17,6 +17,7 @@ export const ChildSelectPage: React.FC = () => {
   const [children, setChildren] = useState<Child[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchChildren = async () => {
@@ -25,6 +26,12 @@ export const ChildSelectPage: React.FC = () => {
         setChildren(response.data);
       } catch (err) {
         setError('Lỗi khi tải danh sách trẻ');
+        const anyErr = err as any;
+        const baseUrl = client.defaults.baseURL || '(no baseURL)';
+        const reqUrl = anyErr?.config?.url || '';
+        const status = anyErr?.response?.status;
+        const message = anyErr?.message;
+        setDebugInfo(`baseURL=${baseUrl} url=${reqUrl} status=${status ?? 'n/a'} msg=${message ?? 'n/a'}`);
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -93,7 +100,10 @@ export const ChildSelectPage: React.FC = () => {
       </motion.div>
 
       {error && (
-        <div className="bg-warning/20 text-text p-4 rounded-xl text-center mb-8 font-semibold">{error}</div>
+        <div className="bg-warning/20 text-text p-4 rounded-xl text-center mb-8 font-semibold">
+          <div>{error}</div>
+          {debugInfo ? <div className="mt-2 text-xs font-medium text-gray-700 break-words">{debugInfo}</div> : null}
+        </div>
       )}
 
       {/* 2x2 Grid */}

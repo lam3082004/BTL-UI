@@ -19,6 +19,9 @@ body,
 
 body {
   background-color: #F0F7F7;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Accessible touch targets */
