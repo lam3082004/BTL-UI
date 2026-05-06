@@ -15,6 +15,12 @@ export class ChildrenService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+    const allowDemoSeed =
+      process.env.NODE_ENV !== 'production' || process.env.SEED_DEMO_DATA === 'true';
+    if (!allowDemoSeed) {
+      return;
+    }
+
     const childCount = await this.childRepository.count();
     if (childCount > 0) {
       return;

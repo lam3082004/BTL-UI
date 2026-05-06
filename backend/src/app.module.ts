@@ -11,6 +11,7 @@ import { AuthModule } from './auth/auth.module';
 import { ChildrenModule } from './children/children.module';
 import { LessonsModule } from './lessons/lessons.module';
 import { ReportsModule } from './reports/reports.module';
+import { resolvePostgresSynchronize } from './typeorm-sync.util';
 
 @Module({
   imports: [
@@ -30,16 +31,21 @@ import { ReportsModule } from './reports/reports.module';
           }
         : {
             type: 'postgres',
-            // Prefer a full DATABASE_URL if provided (useful for remote DBs)
-            url: process.env.DATABASE_URL || undefined,
-            host: process.env.DATABASE_HOST || 'db',
-            port: parseInt(process.env.DATABASE_PORT || '5432'),
-            username: process.env.DATABASE_USER || 'postgres',
-            password: process.env.DATABASE_PASSWORD || 'password',
-            database: process.env.DATABASE_NAME || 'numsense',
+            ...(process.env.DATABASE_URL
+              ? { url: process.env.DATABASE_URL }
+              : {
+                  host: process.env.DATABASE_HOST || 'db',
+                  port: parseInt(process.env.DATABASE_PORT || '5432', 10),
+                  username: process.env.DATABASE_USER || 'postgres',
+                  password: process.env.DATABASE_PASSWORD || 'password',
+                  database: process.env.DATABASE_NAME || 'numsense',
+                }),
             entities: [Parent, Child, LessonSession, QuestionResult],
-            synchronize: process.env.NODE_ENV !== 'production',
+            synchronize: resolvePostgresSynchronize(),
             logging: process.env.NODE_ENV === 'development',
+            ...(process.env.DATABASE_SSL === 'true'
+              ? { ssl: { rejectUnauthorized: false } }
+              : {}),
           },
     ),
     TypeOrmModule.forFeature([Parent, Child, LessonSession, QuestionResult]),

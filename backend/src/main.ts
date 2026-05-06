@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { assertRequiredProductionEnv } from './bootstrap-env';
 
 const normalizeOrigin = (value: string) => value.trim().replace(/\/$/, '');
 
 async function bootstrap() {
+  assertRequiredProductionEnv();
+
   const app = await NestFactory.create(AppModule);
 
   // Enable CORS for frontend
