@@ -5,11 +5,15 @@ import { Child } from './entities/child.entity';
 import { LessonSession } from './entities/lesson-session.entity';
 import { QuestionResult } from './entities/question-result.entity';
 import { resolvePostgresSynchronize } from './typeorm-sync.util';
+import { resolvePostgresSsl } from './postgres-ssl.util';
+
+const databaseUrl = process.env.DATABASE_URL;
+const ssl = resolvePostgresSsl(databaseUrl);
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
-  ...(process.env.DATABASE_URL
-    ? { url: process.env.DATABASE_URL }
+  ...(databaseUrl
+    ? { url: databaseUrl }
     : {
         host: process.env.DATABASE_HOST || 'db',
         port: parseInt(process.env.DATABASE_PORT || '5432', 10),
@@ -22,5 +26,5 @@ export const AppDataSource = new DataSource({
   entities: [Parent, Child, LessonSession, QuestionResult],
   subscribers: [],
   migrations: [],
-  ...(process.env.DATABASE_SSL === 'true' ? { ssl: { rejectUnauthorized: false } } : {}),
+  ...(ssl !== undefined ? { ssl } : {}),
 });
