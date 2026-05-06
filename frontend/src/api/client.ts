@@ -1,5 +1,21 @@
 import axios from 'axios';
 
+const sanitizeApiBaseUrl = (rawValue: string | undefined): string | undefined => {
+  if (!rawValue) return undefined;
+  const value = rawValue.trim();
+
+  // Handle accidental concatenation like "https://a.comhttps://a.com"
+  const match = value.match(/https?:\/\/[a-zA-Z0-9.-]+(?::\d+)?/);
+  const candidate = match ? match[0] : value;
+
+  try {
+    const parsed = new URL(candidate);
+    return parsed.origin;
+  } catch {
+    return undefined;
+  }
+};
+
 const inferApiBaseUrl = (): string => {
   if (typeof window === 'undefined') return 'http://localhost:3001';
   const { protocol, hostname } = window.location;
@@ -11,7 +27,7 @@ const inferApiBaseUrl = (): string => {
   return 'http://localhost:3001';
 };
 
-const envBaseUrl = import.meta.env.VITE_API_BASE_URL as string | undefined;
+const envBaseUrl = sanitizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL as string | undefined);
 const isEnvUrlLocal =
   typeof envBaseUrl === 'string' &&
   /\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(envBaseUrl.trim());
