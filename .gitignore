@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# Track package-lock.json for reproducible deploys (npm ci on Render, etc.)
 yarn.lock
 
 # Build outputs
