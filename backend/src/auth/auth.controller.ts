@@ -3,6 +3,8 @@ import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 
+const normalizeUrl = (value: string) => value.trim().replace(/\/$/, '');
+
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -24,7 +26,7 @@ export class AuthController {
       process.env.FRONTEND_PUBLIC_URL ||
       process.env.FRONTEND_URL ||
       process.env.FRONTEND_URLS?.split(',')?.[0]?.trim() ||
-      'http://localhost:5174';
-    res.redirect(`${frontendUrl}/parent-dashboard?token=${token}`);
+      'http://localhost:5173';
+    res.redirect(`${normalizeUrl(frontendUrl)}/parent-dashboard?token=${encodeURIComponent(token)}`);
   }
 }

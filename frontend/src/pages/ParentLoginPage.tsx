@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
+import client from '../api/client';
 
 export const ParentLoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ export const ParentLoginPage: React.FC = () => {
   }, [token, navigate]);
 
   const handleGoogleLogin = () => {
-    const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001';
+    const apiBaseUrl = client.defaults.baseURL || 'http://localhost:3001';
     window.location.href = `${apiBaseUrl}/auth/google`;
   };
 
