@@ -40,7 +40,12 @@ export class AuthService {
   }
 
   generateJwt(parent: Parent): string {
-    const payload = { sub: parent.id, email: parent.email };
+    const payload = {
+      sub: parent.id,
+      email: parent.email,
+      name: parent.name,
+      avatarUrl: parent.avatarUrl,
+    };
     return this.jwtService.sign(payload);
   }
 

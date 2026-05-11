@@ -16,6 +16,29 @@ export const ParentDashboard: React.FC = () => {
   const parentInitial = parent?.name?.trim()?.charAt(0)?.toUpperCase() || 'P';
   const isAuthenticated = Boolean(token);
 
+  const buildProfileFromToken = (rawToken: string | null): Parent | null => {
+    if (!rawToken) return null;
+
+    try {
+      const payloadPart = rawToken.split('.')[1];
+      if (!payloadPart) return null;
+      const normalizedPayload = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(window.atob(normalizedPayload));
+
+      if (!payload.sub || !payload.email) return null;
+
+      return {
+        id: payload.sub,
+        googleId: '',
+        email: payload.email,
+        name: payload.name || payload.email,
+        avatarUrl: payload.avatarUrl,
+      };
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(() => {
     requireAuth('/parent-login');
     if (token) {
@@ -26,7 +49,13 @@ export const ParentDashboard: React.FC = () => {
   const fetchDashboardData = async () => {
     try {
       const profileRequest = client.get('/auth/profile').catch((err) => {
-        setProfileError('Không tải được hồ sơ phụ huynh. Hãy đăng xuất rồi đăng nhập lại.');
+        const tokenProfile = buildProfileFromToken(localStorage.getItem('jwtToken'));
+        if (tokenProfile) {
+          setParent(tokenProfile);
+          setProfileError(null);
+        } else {
+          setProfileError('Không tải được hồ sơ phụ huynh. Hãy đăng xuất rồi đăng nhập lại.');
+        }
         console.error('Failed to fetch parent profile:', err);
         return null;
       });
