@@ -10,9 +10,11 @@ export const ParentDashboard: React.FC = () => {
   const { token, logout, requireAuth } = useAuth();
   const [children, setChildren] = useState<Child[]>([]);
   const [parent, setParent] = useState<Parent | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [expandedChild, setExpandedChild] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const parentInitial = parent?.name?.trim()?.charAt(0)?.toUpperCase() || 'P';
+  const isAuthenticated = Boolean(token);
 
   useEffect(() => {
     requireAuth('/parent-login');
@@ -23,11 +25,22 @@ export const ParentDashboard: React.FC = () => {
 
   const fetchDashboardData = async () => {
     try {
+      const profileRequest = client.get('/auth/profile').catch((err) => {
+        setProfileError('Không tải được hồ sơ phụ huynh. Hãy đăng xuất rồi đăng nhập lại.');
+        console.error('Failed to fetch parent profile:', err);
+        return null;
+      });
+      const childrenRequest = client.get('/children');
+
       const [profileResponse, childrenResponse] = await Promise.all([
-        client.get('/auth/profile'),
-        client.get('/children'),
+        profileRequest,
+        childrenRequest,
       ]);
-      setParent(profileResponse.data);
+
+      if (profileResponse) {
+        setParent(profileResponse.data);
+        setProfileError(null);
+      }
       setChildren(childrenResponse.data);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
@@ -92,29 +105,31 @@ export const ParentDashboard: React.FC = () => {
           </button>
         </div>
 
-        {parent && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-3xl p-5 sm:p-6 shadow-soft border-2 border-teal/10 flex flex-col sm:flex-row sm:items-center gap-4"
-          >
-            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-teal to-blue flex items-center justify-center text-white text-3xl font-bold overflow-hidden shrink-0">
-              {parent.avatarUrl ? (
-                <img src={parent.avatarUrl} alt={parent.name} className="w-full h-full object-cover" />
-              ) : (
-                parentInitial
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-teal mb-1">HỒ SƠ PHỤ HUYNH</p>
-              <h2 className="text-2xl sm:text-3xl font-bold text-text truncate">{parent.name}</h2>
-              <p className="text-gray-600 break-words">{parent.email}</p>
-            </div>
-            <div className="bg-green/20 text-text rounded-2xl px-4 py-3 font-semibold text-sm">
-              Đã đăng nhập bằng Google
-            </div>
-          </motion.div>
-        )}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-white rounded-3xl p-5 sm:p-6 shadow-soft border-2 border-teal/10 flex flex-col sm:flex-row sm:items-center gap-4"
+        >
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-teal to-blue flex items-center justify-center text-white text-3xl font-bold overflow-hidden shrink-0">
+            {parent?.avatarUrl ? (
+              <img src={parent.avatarUrl} alt={parent.name} className="w-full h-full object-cover" />
+            ) : (
+              parentInitial
+            )}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-teal mb-1">HỒ SƠ PHỤ HUYNH</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-text truncate">
+              {parent?.name || 'Đang chờ hồ sơ Google'}
+            </h2>
+            <p className="text-gray-600 break-words">
+              {parent?.email || profileError || 'Bạn đã đăng nhập, hồ sơ đang được đồng bộ.'}
+            </p>
+          </div>
+          <div className={`${parent ? 'bg-green/20' : 'bg-yellow/20'} text-text rounded-2xl px-4 py-3 font-semibold text-sm`}>
+            {parent ? 'Đã đăng nhập bằng Google' : isAuthenticated ? 'Cần đồng bộ lại' : 'Chưa đăng nhập'}
+          </div>
+        </motion.div>
       </motion.div>
 
       {/* Main Content */}
