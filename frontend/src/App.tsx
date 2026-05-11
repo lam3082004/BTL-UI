@@ -10,6 +10,7 @@ import { RewardPage } from './pages/RewardPage';
 import { ParentDashboard } from './pages/ParentDashboard';
 import { ProgressReport } from './pages/ProgressReport';
 import { ChildConfig } from './pages/ChildConfig';
+import { AddChildPage } from './pages/AddChildPage';
 import { ParentLoginPage } from './pages/ParentLoginPage';
 import { PwaStatusBanner } from './components/PwaStatusBanner';
 
@@ -33,6 +34,7 @@ function App() {
           {/* Parent Routes */}
           <Route path="/parent-login" element={<ParentLoginPage />} />
           <Route path="/parent-dashboard" element={<ParentDashboard />} />
+          <Route path="/add-child" element={<AddChildPage />} />
           <Route path="/progress-report/:childId" element={<ProgressReport />} />
           <Route path="/child-config/:childId" element={<ChildConfig />} />
 

@@ -3,28 +3,33 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import client from '../api/client';
 import { useAuth } from '../hooks/useAuth';
-import { Child } from '../types';
+import { Child, Parent } from '../types';
 
 export const ParentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { token, logout, requireAuth } = useAuth();
   const [children, setChildren] = useState<Child[]>([]);
+  const [parent, setParent] = useState<Parent | null>(null);
   const [expandedChild, setExpandedChild] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     requireAuth('/parent-login');
     if (token) {
-      fetchChildren();
+      fetchDashboardData();
     }
-  }, [token]);
+  }, [token, isLoading]);
 
-  const fetchChildren = async () => {
+  const fetchDashboardData = async () => {
     try {
-      const response = await client.get('/children');
-      setChildren(response.data);
+      const [profileResponse, childrenResponse] = await Promise.all([
+        client.get('/auth/profile'),
+        client.get('/children'),
+      ]);
+      setParent(profileResponse.data);
+      setChildren(childrenResponse.data);
     } catch (err) {
-      console.error('Failed to fetch children:', err);
+      console.error('Failed to fetch dashboard data:', err);
     } finally {
       setIsLoading(false);
     }
@@ -41,6 +46,19 @@ export const ParentDashboard: React.FC = () => {
 
   const handleGoToConfig = (childId: string) => {
     navigate(`/child-config/${childId}`);
+  };
+
+  const handleDeleteChild = async (childId: string) => {
+    const confirmed = window.confirm('Bạn có chắc muốn xóa hồ sơ trẻ này?');
+    if (!confirmed) return;
+
+    try {
+      await client.delete(`/children/${childId}`);
+      setChildren((current) => current.filter((child) => child.id !== childId));
+      setExpandedChild(null);
+    } catch (err) {
+      console.error('Failed to delete child:', err);
+    }
   };
 
   if (isLoading) {
@@ -63,6 +81,11 @@ export const ParentDashboard: React.FC = () => {
           <div>
             <p className="text-teal text-sm font-bold">NumSense</p>
             <h1 className="text-4xl font-bold text-text">BẢNG ĐIỀU KHIỂN</h1>
+            {parent && (
+              <p className="text-sm text-gray-600 mt-2">
+                {parent.name} · {parent.email}
+              </p>
+            )}
           </div>
           <button
             onClick={handleLogout}
@@ -166,7 +189,7 @@ export const ParentDashboard: React.FC = () => {
                       ⚙️ Cấu hình
                     </button>
                     <button
-                      onClick={() => {/* Delete child */}}
+                      onClick={() => handleDeleteChild(child.id)}
                       className="px-4 py-2 text-warning hover:text-red-600 transition font-semibold text-lg"
                     >
                       🗑️ Xóa

@@ -2,6 +2,7 @@ import { Controller, Get, UseGuards, Req, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 const normalizeUrl = (value: string) => value.trim().replace(/\/$/, '');
 
@@ -28,5 +29,12 @@ export class AuthController {
       process.env.FRONTEND_URLS?.split(',')?.[0]?.trim() ||
       'http://localhost:5173';
     res.redirect(`${normalizeUrl(frontendUrl)}/parent-dashboard?token=${encodeURIComponent(token)}`);
+  }
+
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  getProfile(@Req() req: any) {
+    const { id, email, name, googleId, createdAt } = req.user;
+    return { id, email, name, googleId, createdAt };
   }
 }
