@@ -12,6 +12,7 @@ export const ParentDashboard: React.FC = () => {
   const [parent, setParent] = useState<Parent | null>(null);
   const [expandedChild, setExpandedChild] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const parentInitial = parent?.name?.trim()?.charAt(0)?.toUpperCase() || 'P';
 
   useEffect(() => {
     requireAuth('/parent-login');
@@ -70,35 +71,54 @@ export const ParentDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen px-4 py-8 bg-gradient-to-b from-teal/10 to-blue/10">
+    <div className="min-h-screen px-4 py-6 sm:py-8 bg-gradient-to-b from-teal/10 to-blue/10">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-4xl mx-auto mb-12"
+        className="max-w-5xl mx-auto mb-8"
       >
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-start justify-between gap-4 mb-6">
           <div>
             <p className="text-teal text-sm font-bold">NumSense</p>
             <h1 className="text-4xl font-bold text-text">BẢNG ĐIỀU KHIỂN</h1>
-            {parent && (
-              <p className="text-sm text-gray-600 mt-2">
-                {parent.name} · {parent.email}
-              </p>
-            )}
           </div>
           <button
             onClick={handleLogout}
-            className="text-3xl text-teal hover:scale-110 transition"
+            className="min-w-touch min-h-touch rounded-2xl bg-white text-teal text-2xl shadow-soft hover:scale-105 transition"
             title="Đăng xuất"
           >
-            ⚙️
+            ⎋
           </button>
         </div>
+
+        {parent && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white rounded-3xl p-5 sm:p-6 shadow-soft border-2 border-teal/10 flex flex-col sm:flex-row sm:items-center gap-4"
+          >
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-teal to-blue flex items-center justify-center text-white text-3xl font-bold overflow-hidden shrink-0">
+              {parent.avatarUrl ? (
+                <img src={parent.avatarUrl} alt={parent.name} className="w-full h-full object-cover" />
+              ) : (
+                parentInitial
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-teal mb-1">HỒ SƠ PHỤ HUYNH</p>
+              <h2 className="text-2xl sm:text-3xl font-bold text-text truncate">{parent.name}</h2>
+              <p className="text-gray-600 break-words">{parent.email}</p>
+            </div>
+            <div className="bg-green/20 text-text rounded-2xl px-4 py-3 font-semibold text-sm">
+              Đã đăng nhập bằng Google
+            </div>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Main Content */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         {/* Section Title */}
         <motion.div
           initial={{ opacity: 0 }}

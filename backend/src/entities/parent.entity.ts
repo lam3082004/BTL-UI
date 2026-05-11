@@ -15,6 +15,9 @@ export class Parent {
   @Column()
   name: string;
 
+  @Column({ nullable: true })
+  avatarUrl: string;
+
   @CreateDateColumn()
   createdAt: Date;
 

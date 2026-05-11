@@ -13,8 +13,9 @@ export class AuthService {
   ) {}
 
   async validateOrCreateParent(googleProfile: any): Promise<Parent> {
-    const { id, displayName, emails } = googleProfile;
+    const { id, displayName, emails, photos } = googleProfile;
     const email = emails[0].value;
+    const avatarUrl = photos?.[0]?.value;
 
     let parent = await this.parentRepository.findOne({
       where: { googleId: id },
@@ -25,7 +26,13 @@ export class AuthService {
         googleId: id,
         email,
         name: displayName,
+        avatarUrl,
       });
+      await this.parentRepository.save(parent);
+    } else {
+      parent.email = email;
+      parent.name = displayName;
+      parent.avatarUrl = avatarUrl || parent.avatarUrl;
       await this.parentRepository.save(parent);
     }
 

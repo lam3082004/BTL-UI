@@ -19,6 +19,7 @@ export interface Parent {
   googleId: string;
   email: string;
   name: string;
+  avatarUrl?: string;
 }
 
 export interface LessonSession {
