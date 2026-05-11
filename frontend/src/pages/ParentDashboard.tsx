@@ -54,6 +54,11 @@ export const ParentDashboard: React.FC = () => {
     navigate('/');
   };
 
+  const handleRelogin = () => {
+    localStorage.removeItem('jwtToken');
+    navigate('/parent-login');
+  };
+
   const handleGoToReport = (childId: string) => {
     navigate(`/progress-report/${childId}`);
   };
@@ -126,9 +131,18 @@ export const ParentDashboard: React.FC = () => {
               {parent?.email || profileError || 'Bạn đã đăng nhập, hồ sơ đang được đồng bộ.'}
             </p>
           </div>
-          <div className={`${parent ? 'bg-green/20' : 'bg-yellow/20'} text-text rounded-2xl px-4 py-3 font-semibold text-sm`}>
-            {parent ? 'Đã đăng nhập bằng Google' : isAuthenticated ? 'Cần đồng bộ lại' : 'Chưa đăng nhập'}
-          </div>
+          {parent ? (
+            <div className="bg-green/20 text-text rounded-2xl px-4 py-3 font-semibold text-sm">
+              Đã đăng nhập bằng Google
+            </div>
+          ) : (
+            <button
+              onClick={handleRelogin}
+              className="bg-yellow/20 hover:bg-yellow/30 text-text rounded-2xl px-4 py-3 font-semibold text-sm transition"
+            >
+              Đăng nhập lại
+            </button>
+          )}
         </motion.div>
       </motion.div>
 
