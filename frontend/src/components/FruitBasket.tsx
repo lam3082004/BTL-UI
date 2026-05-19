@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { useDroppable } from '@dnd-kit/core';
-import { CSS } from '@dnd-kit/utilities';
 
 interface FruitBasketProps {
   isActive: boolean;
@@ -39,7 +38,7 @@ export const FruitBasket: React.FC<FruitBasketProps> = ({
       ref={setNodeRef}
       className={`flex flex-col items-center justify-center p-8 border-4 transition-all rounded-lg ${
         isOver ? 'border-success bg-success/10 scale-105' : 'border-primary bg-white'
-      } ${isWrong ? 'border-warning' : ''}`}
+      } ${isWrong ? 'border-warning' : ''} ${isActive ? '' : 'opacity-60'}`}
     >
       <motion.div
         variants={isWrong ? shakeVariants : undefined}

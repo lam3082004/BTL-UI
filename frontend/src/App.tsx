@@ -5,6 +5,7 @@ import { SplashPage } from './pages/SplashPage';
 import { ChildSelectPage } from './pages/ChildSelectPage';
 import { ChildHomePage } from './pages/ChildHomePage';
 import { LessonPage } from './pages/LessonPage';
+import { LessonSelectPage } from './pages/LessonSelectPage';
 import { TreasurePage } from './pages/TreasurePage';
 import { RewardPage } from './pages/RewardPage';
 import { ParentDashboard } from './pages/ParentDashboard';
@@ -26,6 +27,7 @@ function App() {
           <Route path="/" element={<SplashPage />} />
           <Route path="/child-select" element={<ChildSelectPage />} />
           <Route path="/child/:childId/home" element={<ChildHomePage />} />
+          <Route path="/child/:childId/lessons" element={<LessonSelectPage />} />
           <Route path="/child/:childId/lesson" element={<LessonPage />} />
           <Route path="/child/:childId/treasure" element={<TreasurePage />} />
           <Route path="/lesson" element={<LessonPage />} />

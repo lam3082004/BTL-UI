@@ -36,7 +36,7 @@ export const ParentLoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center px-4 bg-gradient-to-b from-teal/10 to-blue/10">
+    <main className="app-screen flex flex-col items-center justify-center px-8 py-10">
       <motion.div
         className="text-center max-w-md"
         variants={containerVariants}
@@ -54,12 +54,20 @@ export const ParentLoginPage: React.FC = () => {
           PHẦN PHỤ HUYNH
         </motion.h2>
 
-        {/* Subtitle */}
-        <motion.p variants={itemVariants} className="text-lg text-gray-600 mb-12">
-          Đăng nhập để xem tiến độ học tập của con
+        <motion.p variants={itemVariants} className="text-lg text-gray-600 mb-8">
+          Có thể dùng bảng điều khiển ngay, đăng nhập Google chỉ để đồng bộ dữ liệu.
         </motion.p>
 
-        {/* Google Login Button */}
+        <motion.button
+          variants={itemVariants}
+          onClick={() => navigate('/parent-dashboard')}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="btn-secondary w-full max-w-sm text-lg font-bold py-4 px-6 mb-4"
+        >
+          Vào bảng điều khiển
+        </motion.button>
+
         <motion.button
           variants={itemVariants}
           onClick={handleGoogleLogin}
@@ -97,6 +105,6 @@ export const ParentLoginPage: React.FC = () => {
           ← Quay lại trang chủ
         </motion.button>
       </motion.div>
-    </div>
+    </main>
   );
 };

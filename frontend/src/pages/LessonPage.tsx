@@ -1,243 +1,357 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { DndContext, DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { DraggableFruit } from '../components/DraggableFruit.tsx';
-import { FruitBasket } from '../components/FruitBasket.tsx';
-import { useLesson } from '../hooks/useLesson.ts';
-import { Child } from '../types/index.ts';
+import {
+  DndContext,
+  DragEndEvent,
+  MouseSensor,
+  TouchSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { CSS } from '@dnd-kit/utilities';
+import { useLesson } from '../hooks/useLesson';
+import { Child, MathOperation } from '../types';
+import { getChildVisual, getStoredChild } from '../utils/childVisuals';
+
+type LessonChoice = {
+  operation: MathOperation;
+  title: string;
+};
+
+const totalQuestions = 4;
+
+const applePositions = [
+  'left-[118px] top-[34px]',
+  'left-[194px] top-[6px]',
+  'left-[260px] top-[54px]',
+  'left-[82px] top-[92px]',
+  'left-[207px] top-[104px]',
+  'left-[286px] top-[132px]',
+  'left-[132px] top-[160px]',
+  'left-[240px] top-[196px]',
+  'left-[168px] top-[222px]',
+  'left-[300px] top-[220px]',
+];
+
+const itemThemes = [
+  { item: '🍎', itemName: 'quả táo', basket: '🧺', basketName: 'giỏ', scene: '🌳', bg: '#E4F8FF' },
+  { item: '⭐', itemName: 'ngôi sao', basket: '🎒', basketName: 'túi', scene: '☁️', bg: '#FFF3DF' },
+  { item: '🐟', itemName: 'con cá', basket: '🪣', basketName: 'xô', scene: '🌊', bg: '#EAF8FB' },
+  { item: '🍬', itemName: 'viên kẹo', basket: '🎁', basketName: 'hộp quà', scene: '🍭', bg: '#FFF0F4' },
+  { item: '⚽', itemName: 'quả bóng', basket: '📦', basketName: 'hộp', scene: '🌈', bg: '#F1F8EA' },
+];
+
+const readStoredLesson = (): LessonChoice => {
+  const value = sessionStorage.getItem('selectedLesson');
+  if (!value) return { operation: MathOperation.ADDITION, title: 'Học Đếm' };
+
+  try {
+    return JSON.parse(value) as LessonChoice;
+  } catch {
+    return { operation: MathOperation.ADDITION, title: 'Học Đếm' };
+  }
+};
+
+const DraggableItem: React.FC<{ id: string; className: string; dropped: boolean; item: string; label: string }> = ({
+  id,
+  className,
+  dropped,
+  item,
+  label,
+}) => {
+  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+    id,
+    disabled: dropped,
+  });
+
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      style={{ transform: CSS.Translate.toString(transform) }}
+      className={`absolute z-20 text-5xl touch-none select-none transition ${className} ${
+        dropped ? 'opacity-20 scale-75' : 'cursor-grab active:cursor-grabbing'
+      } ${isDragging ? 'opacity-80 scale-110' : ''}`}
+      aria-label={label}
+      {...listeners}
+      {...attributes}
+    >
+      {item}
+    </button>
+  );
+};
+
+const BasketDropZone: React.FC<{ count: number; target: number; item: string; basket: string }> = ({
+  count,
+  target,
+  item,
+  basket,
+}) => {
+  const { setNodeRef, isOver } = useDroppable({ id: 'basket' });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`absolute bottom-0 left-1/2 z-10 h-32 w-40 -translate-x-1/2 rounded-[24px] border-2 border-dashed bg-white/55 transition ${
+        isOver ? 'scale-105 border-[#71C9EE] bg-[#E4F8FF]' : 'border-gray-300'
+      }`}
+    >
+      <div className="absolute inset-x-0 top-2 flex flex-wrap justify-center gap-0 px-3 text-3xl leading-none">
+        {Array.from({ length: count }, (_, index) => (
+          <span key={index}>{item}</span>
+        ))}
+      </div>
+      <div className="absolute inset-x-0 bottom-0 text-center text-7xl leading-none">{basket}</div>
+      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm font-extrabold text-gray-500 shadow-sm">
+        {count}/{target}
+      </div>
+    </div>
+  );
+};
+
+const buildQuestionCopy = (
+  lessonTitle: string,
+  operation: MathOperation,
+  question: { operand1: number; operand2: number; answer: number },
+  theme: (typeof itemThemes)[number],
+) => {
+  if (lessonTitle === 'Học Đếm') {
+    return {
+      target: Math.min(10, Math.max(0, question.operand1)),
+      title: `${question.operand1} ${theme.item}`,
+      text: `Kéo ${question.operand1} ${theme.itemName} vào ${theme.basketName}`,
+    };
+  }
+
+  if (operation === MathOperation.SUBTRACTION) {
+    return {
+      target: Math.min(10, Math.max(0, question.answer)),
+      title: `${question.operand1} - ${question.operand2} = ?`,
+      text: `Có ${question.operand1} ${theme.itemName}, bớt ${question.operand2}. Còn lại mấy?`,
+    };
+  }
+
+  if (operation === MathOperation.MULTIPLICATION) {
+    return {
+      target: Math.min(10, Math.max(0, question.answer)),
+      title: `${question.operand1} × ${question.operand2} = ?`,
+      text: `${question.operand1} nhóm, mỗi nhóm ${question.operand2} ${theme.itemName}. Có tất cả mấy?`,
+    };
+  }
+
+  if (operation === MathOperation.DIVISION) {
+    return {
+      target: Math.min(10, Math.max(0, question.answer)),
+      title: `${question.operand1} ÷ ${question.operand2} = ?`,
+      text: `Chia đều ${question.operand1} ${theme.itemName} vào ${question.operand2} nhóm. Mỗi nhóm mấy?`,
+    };
+  }
+
+  return {
+    target: Math.min(10, Math.max(0, question.answer)),
+    title: `${question.operand1} + ${question.operand2} = ?`,
+    text: `${question.operand1} ${theme.itemName} thêm ${question.operand2} nữa. Tất cả mấy?`,
+  };
+};
 
 export const LessonPage: React.FC = () => {
   const navigate = useNavigate();
   const { childId } = useParams<{ childId: string }>();
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
-  const [droppedCount, setDroppedCount] = useState(0);
-  const [sessionFinished, setSessionFinished] = useState(false);
-  const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const startTimeRef = useRef<number>(Date.now());
-  const [speakStartTime, setSpeakStartTime] = useState<number>(0);
-  const basketShakeRef = useRef<() => void>(() => {});
-  const soundSuccessRef = useRef<HTMLAudioElement>(new Audio('/sounds/success.wav'));
-  const soundWrongRef = useRef<HTMLAudioElement>(new Audio('/sounds/wrong.wav'));
-
+  const [lessonChoice] = useState(readStoredLesson);
+  const [droppedAppleIds, setDroppedAppleIds] = useState<string[]>([]);
+  const [results, setResults] = useState<boolean[]>([]);
+  const [modal, setModal] = useState<'correct' | 'wrong' | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const startTimeRef = useRef(Date.now());
   const sensors = useSensors(
-    useSensor(MouseSensor),
-    useSensor(TouchSensor),
+    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 8 } }),
   );
 
   useEffect(() => {
-    // Get selected child from sessionStorage
-    const childData = sessionStorage.getItem('selectedChild');
-    if (!childData) {
+    const child = getStoredChild();
+    if (!child) {
       navigate('/child-select');
       return;
     }
-
-    const child = JSON.parse(childData);
     setSelectedChild(child);
   }, [navigate]);
+
+  const allowedOperations = useMemo(() => [lessonChoice.operation], [lessonChoice.operation]);
 
   const lesson = useLesson(
     selectedChild?.id || '',
     selectedChild?.minNumber || 1,
     selectedChild?.maxNumber || 10,
-    selectedChild?.allowedOperations || [],
+    allowedOperations,
   );
 
   useEffect(() => {
-    if (selectedChild && !lesson.sessionId) {
-      lesson.startSession();
-      setSpeakStartTime(Date.now());
-    }
-  }, [selectedChild, lesson]);
+    if (!selectedChild || lesson.sessionId || lesson.isLoading) return;
+    lesson.startSession();
+    startTimeRef.current = Date.now();
+  }, [selectedChild, lesson.sessionId, lesson.isLoading, lesson.startSession]);
 
-  const handleDragEnd = useCallback(
-    async (event: DragEndEvent) => {
-      setActiveDragId(null);
-      const { active, over } = event;
-
-      if (over?.id === 'basket' && active.data.current?.value) {
-        const fruitValue = active.data.current.value;
-        const newCount = droppedCount + fruitValue;
-
-        // Play sound based on if correct
-        if (newCount <= lesson.currentQuestion?.answer! || 0) {
-          soundSuccessRef.current.play().catch(() => {});
-        } else {
-          soundWrongRef.current.play().catch(() => {});
-        }
-
-        setDroppedCount(newCount);
-
-        // Check if correct
-        if (newCount === lesson.currentQuestion?.answer) {
-          const responseTime = Date.now() - startTimeRef.current;
-          await lesson.submitAnswer(newCount, responseTime);
-
-          // Check if 5 questions completed
-          if (lesson.questionCount + 1 >= 5) {
-            await lesson.completeSession();
-            setSessionFinished(true);
-            setTimeout(() => navigate('/reward', { state: { sessionId: lesson.sessionId } }), 1000);
-          } else {
-            // Reset for next question
-            setDroppedCount(0);
-            startTimeRef.current = Date.now();
-          }
-        }
-      }
-    },
-    [droppedCount, lesson, navigate],
-  );
-
-  const readQuestionAloud = () => {
-    if (!lesson.currentQuestion) return;
-
-    const text = lesson.currentQuestion.expression.replace('?', 'bằng bao nhiêu');
-    const speech = new SpeechSynthesisUtterance(text);
-    speech.lang = 'vi-VN';
-    speech.rate = 0.8;
-    window.speechSynthesis.speak(speech);
-  };
+  useEffect(() => {
+    setDroppedAppleIds([]);
+    startTimeRef.current = Date.now();
+  }, [lesson.currentQuestion?.expression]);
 
   if (!selectedChild || !lesson.currentQuestion) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-bg">
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-2xl text-teal font-bold">
-          Đang tải bài học...
-        </motion.div>
-      </div>
+      <main className="app-screen grid place-items-center">
+        <div className="text-2xl text-[#71C9E8] font-extrabold">Đang tải bài học...</div>
+      </main>
     );
   }
 
-  // Generate fruit array for dragging
-  const fruitsToShow = [];
-  for (let i = 0; i < lesson.currentQuestion.operand1; i++) {
-    fruitsToShow.push({ id: `fruit1-${i}`, value: 1, emoji: '🍎' });
-  }
-  for (let i = 0; i < lesson.currentQuestion.operand2; i++) {
-    fruitsToShow.push({ id: `fruit2-${i}`, value: 1, emoji: '🍊' });
-  }
+  const visual = getChildVisual(selectedChild);
+  const theme = itemThemes[(lesson.questionCount + results.length) % itemThemes.length];
+  const questionCopy = buildQuestionCopy(lessonChoice.title, lessonChoice.operation, lesson.currentQuestion, theme);
+  const targetCount = questionCopy.target;
+  const availableItems = Math.min(10, Math.max(targetCount + 2, 4));
+  const backRoute = childId ? `/child/${childId}/lessons` : '/child-select';
+  const selectedApples = droppedAppleIds.length;
 
-  const backRoute = childId ? `/child/${childId}/home` : '/child-select';
+  const handleDragEnd = (event: DragEndEvent) => {
+    if (event.over?.id !== 'basket') return;
+
+    const appleId = String(event.active.id);
+    setDroppedAppleIds((current) => (current.includes(appleId) ? current : [...current, appleId]));
+  };
+
+  const confirmAnswer = async () => {
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
+    const isCorrect = selectedApples === targetCount;
+    const nextResults = [...results, isCorrect];
+    const responseTime = Date.now() - startTimeRef.current;
+
+    await lesson.submitAnswer(selectedApples, responseTime);
+    setResults(nextResults);
+    setModal(isCorrect ? 'correct' : 'wrong');
+    setIsSubmitting(false);
+  };
+
+  const continueLesson = async () => {
+    if (results.length >= totalQuestions) {
+      await lesson.completeSession();
+      navigate('/reward', {
+        state: {
+          sessionId: lesson.sessionId,
+          childName: selectedChild.name,
+          lessonTitle: lessonChoice.title,
+          results,
+        },
+      });
+      return;
+    }
+
+    setModal(null);
+  };
+
+  const resetCurrent = () => setDroppedAppleIds([]);
 
   return (
-    <DndContext 
-      sensors={sensors} 
-      onDragEnd={handleDragEnd}
-      onDragStart={(event) => setActiveDragId(event.active.id as string)}
-    >
-      <div className="min-h-screen w-full px-4 py-6 bg-gradient-to-b from-teal/10 to-blue/10 flex flex-col">
-        {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }} 
-          animate={{ opacity: 1, y: 0 }} 
-          className="flex justify-between items-center mb-8"
-        >
-          <button
-            onClick={() => navigate(backRoute)}
-            className="text-3xl text-teal hover:scale-110 transition"
-          >
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <main className="app-screen px-8 py-10 overflow-hidden">
+        <div className="screen-top">
+          <button className="circle-button" onClick={() => navigate(backRoute)} aria-label="Quay lại">
             ←
           </button>
-          <div className="text-center flex-1">
-            <p className="text-gray-600 text-sm mb-1">HỌC BÀI NÀO</p>
-            <h2 className="text-4xl font-bold text-text">{selectedChild.name}</h2>
+          <div className="kid-chip">
+            <span style={{ backgroundColor: visual.color }}>{visual.avatar}</span>
+            <strong>{selectedChild.name.toUpperCase()}</strong>
           </div>
-          <div className="text-3xl">{selectedChild.name === 'Bé Bo' ? '📖' : '🐰'}</div>
-        </motion.div>
-
-        {/* Question Count */}
-        <motion.p 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
-          className="text-center text-gray-600 mb-2 font-semibold"
-        >
-          Câu hỏi {lesson.questionCount + 1}/5
-        </motion.p>
-
-        {/* Expression Header Card */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-white rounded-full px-6 py-3 text-center shadow-soft mb-8 max-w-md mx-auto"
-        >
-          <p className="text-lg text-gray-600 mb-1">
-            🍎 {lesson.currentQuestion.operand1} vào giỏ 🍊 {lesson.currentQuestion.operand2} 🧺
-          </p>
-          <p className="text-3xl font-bold text-teal">{lesson.currentQuestion.expression}</p>
-        </motion.div>
-
-        {/* Speak Button - Animated pulse for first 3 seconds */}
-        <motion.button
-          onClick={readQuestionAloud}
-          className="self-center mb-8 w-20 h-20 rounded-full bg-teal text-white text-3xl shadow-soft hover:shadow-lg transition"
-          animate={{
-            scale: Date.now() - speakStartTime < 3000 ? [1, 1.2, 1] : 1,
-          }}
-          transition={{ repeat: Date.now() - speakStartTime < 3000 ? Infinity : 0, duration: 1 }}
-        >
-          🔊
-        </motion.button>
-
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col lg:flex-row gap-8 items-center justify-center mb-8">
-          {/* Draggable Fruits */}
-          <motion.div
-            className="flex flex-wrap gap-3 justify-center max-w-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-          >
-            {fruitsToShow.map((fruit) => (
-              <DraggableFruit key={fruit.id} id={fruit.id} value={fruit.value} emoji={fruit.emoji} />
-            ))}
-          </motion.div>
-
-          {/* Basket */}
-          <motion.div
-            className="w-48 h-48"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <FruitBasket
-              isActive={true}
-              droppedCount={droppedCount}
-              targetCount={lesson.currentQuestion.answer}
-              onShake={() => basketShakeRef.current?.()}
-            />
-          </motion.div>
         </div>
 
-        {/* Progress Dots */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="flex justify-center gap-2 items-center"
-        >
-          {[0, 1, 2, 3, 4].map((idx) => (
-            <div
-              key={idx}
-              className={`h-2 rounded-full transition-all ${
-                idx < lesson.questionCount ? 'bg-teal w-3' : 'bg-gray-300 w-2'
-              }`}
-            />
-          ))}
-        </motion.div>
+        <section className="mt-10">
+          <p className="text-gray-500 font-extrabold">BÀI HỌC</p>
+          <div className="flex items-center justify-between">
+            <h1 className="app-title">{lessonChoice.title.toUpperCase()}</h1>
+            <div className="text-5xl">🧺</div>
+          </div>
 
-        {/* Back Button */}
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          onClick={() => navigate(backRoute)}
-          className="mt-8 text-gray-600 hover:text-teal transition self-center"
-        >
-          ← Quay lại
-        </motion.button>
-      </div>
+          <div className="mt-7 rounded-[16px] px-5 py-4 flex items-center justify-between gap-3" style={{ backgroundColor: theme.bg }}>
+            <div className="min-w-0">
+              <div className="text-2xl font-extrabold">{questionCopy.title}</div>
+              <p className="mt-1 text-sm font-extrabold text-gray-500 leading-snug">{questionCopy.text}</p>
+            </div>
+            <span className="shrink-0 text-4xl">{theme.basket}</span>
+          </div>
+
+          <div className="relative mt-2 h-[365px]">
+            <div className="absolute left-1/2 top-10 z-0 -translate-x-1/2 text-[210px] leading-none opacity-95">{theme.scene}</div>
+            {Array.from({ length: availableItems }, (_, index) => {
+              const appleId = `item-${index}`;
+              return (
+                <DraggableItem
+                  key={appleId}
+                  id={appleId}
+                  className={applePositions[index % applePositions.length]}
+                  dropped={droppedAppleIds.includes(appleId)}
+                  item={theme.item}
+                  label={`Kéo ${theme.itemName} vào ${theme.basketName}`}
+                />
+              );
+            })}
+            <BasketDropZone count={selectedApples} target={targetCount} item={theme.item} basket={theme.basket} />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 mt-7">
+            <button className="outline-pill" onClick={resetCurrent}>
+              ↩ Đặt lại
+            </button>
+            <button className="primary-pill" onClick={confirmAnswer} disabled={isSubmitting}>
+              ✅ Xác nhận
+            </button>
+          </div>
+
+          <div className="soft-card mt-6 p-4 flex justify-around">
+            {Array.from({ length: totalQuestions }, (_, index) => {
+              const result = results[index];
+              return (
+                <div
+                  key={index}
+                  className={`grid h-11 w-11 place-items-center rounded-full font-extrabold ${
+                    result === true
+                      ? 'bg-[#9DE8D0] text-white'
+                      : result === false
+                        ? 'bg-[#FF7A7A] text-white'
+                        : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  {result === true ? '✓' : result === false ? '×' : index + 1}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+        {modal && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-black/55 px-12">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.88 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full max-w-xs rounded-[24px] bg-white p-9 text-center shadow-xl"
+            >
+              <div className="text-7xl mb-4">{modal === 'correct' ? '🎉' : '🤔'}</div>
+              <h2 className="text-2xl font-extrabold mb-6">{modal === 'correct' ? 'ĐÚNG RỒI!' : 'CHƯA CHÍNH XÁC!'}</h2>
+              <button
+                className={`rounded-full px-8 py-4 text-white font-extrabold ${modal === 'correct' ? 'bg-[#9DE8D0]' : 'bg-[#FF7A7A]'}`}
+                onClick={continueLesson}
+              >
+                {results.length >= totalQuestions ? 'Xem kết quả' : modal === 'correct' ? 'Tiếp theo' : 'Tiếp tục'}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </main>
     </DndContext>
   );
 };

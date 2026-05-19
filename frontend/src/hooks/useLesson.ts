@@ -10,28 +10,83 @@ export interface Question {
   answer: number;
 }
 
+const randomNumber = (minNumber: number, maxNumber: number) =>
+  Math.max(1, Math.floor(Math.random() * (Math.max(maxNumber, minNumber) - minNumber + 1)) + minNumber);
+
+const normalizeQuestion = (
+  question: Question,
+  minNumber: number,
+  maxNumber: number,
+  allowedOperations: MathOperation[],
+): Question => {
+  if (Number.isFinite(question.answer) && question.answer >= 0 && question.answer <= 10) {
+    return question;
+  }
+
+  return createFallbackQuestion(minNumber, maxNumber, allowedOperations);
+};
+
+const createFallbackQuestion = (
+  minNumber: number,
+  maxNumber: number,
+  allowedOperations: MathOperation[],
+): Question => {
+  const operation = allowedOperations[0] || MathOperation.ADDITION;
+  const a = Math.min(5, randomNumber(minNumber, maxNumber));
+  const b = Math.min(5, randomNumber(minNumber, maxNumber));
+
+  if (operation === MathOperation.SUBTRACTION) {
+    const operand1 = Math.max(a, b);
+    const operand2 = Math.min(a, b);
+    return {
+      expression: `${operand1} - ${operand2} = ?`,
+      operand1,
+      operand2,
+      operator: '-',
+      answer: operand1 - operand2,
+    };
+  }
+
+  if (operation === MathOperation.MULTIPLICATION) {
+    const operand1 = Math.min(3, a);
+    const operand2 = Math.min(3, b);
+    return {
+      expression: `${operand1} × ${operand2} = ?`,
+      operand1,
+      operand2,
+      operator: '×',
+      answer: operand1 * operand2,
+    };
+  }
+
+  if (operation === MathOperation.DIVISION) {
+    const operand2 = Math.max(1, Math.min(5, b));
+    const answer = Math.max(1, Math.min(5, a));
+    const operand1 = operand2 * answer;
+    return {
+      expression: `${operand1} ÷ ${operand2} = ?`,
+      operand1,
+      operand2,
+      operator: '÷',
+      answer,
+    };
+  }
+
+  return {
+    expression: `${a} + ${b} = ?`,
+    operand1: a,
+    operand2: b,
+    operator: '+',
+    answer: a + b,
+  };
+};
+
 export const useLesson = (childId: string, minNumber: number, maxNumber: number, allowedOperations: MathOperation[]) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [questionCount, setQuestionCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const startSession = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await client.post('/lessons/session', { childId });
-      setSessionId(response.data.id);
-      setQuestionCount(0);
-      generateNewQuestion();
-    } catch (err) {
-      setError('Failed to start lesson');
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [childId]);
 
   const generateNewQuestion = useCallback(async () => {
     setIsLoading(true);
@@ -41,20 +96,46 @@ export const useLesson = (childId: string, minNumber: number, maxNumber: number,
         maxNumber,
         allowedOperations,
       });
-      setCurrentQuestion(response.data);
+      setCurrentQuestion(normalizeQuestion(response.data, minNumber, maxNumber, allowedOperations));
     } catch (err) {
-      setError('Failed to generate question');
+      setCurrentQuestion(createFallbackQuestion(minNumber, maxNumber, allowedOperations));
+      setError(null);
       console.error(err);
     } finally {
       setIsLoading(false);
     }
   }, [minNumber, maxNumber, allowedOperations]);
 
+  const startSession = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const response = await client.post('/lessons/session', { childId });
+      setSessionId(response.data.id);
+      setQuestionCount(0);
+      await generateNewQuestion();
+    } catch (err) {
+      setSessionId(`local-${Date.now()}`);
+      setQuestionCount(0);
+      setCurrentQuestion(createFallbackQuestion(minNumber, maxNumber, allowedOperations));
+      setError(null);
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [childId, minNumber, maxNumber, allowedOperations, generateNewQuestion]);
+
   const submitAnswer = useCallback(
     async (userAnswer: number, responseTimeMs: number): Promise<boolean> => {
       if (!sessionId || !currentQuestion) return false;
 
       const isCorrect = userAnswer === currentQuestion.answer;
+
+      if (sessionId.startsWith('local-')) {
+        setQuestionCount((prev) => prev + 1);
+        setCurrentQuestion(createFallbackQuestion(minNumber, maxNumber, allowedOperations));
+        return isCorrect;
+      }
 
       try {
         await client.post('/lessons/result', {
@@ -73,11 +154,12 @@ export const useLesson = (childId: string, minNumber: number, maxNumber: number,
         return false;
       }
     },
-    [sessionId, currentQuestion, generateNewQuestion],
+    [sessionId, currentQuestion, minNumber, maxNumber, allowedOperations, generateNewQuestion],
   );
 
   const completeSession = useCallback(async () => {
     if (!sessionId) return;
+    if (sessionId.startsWith('local-')) return { sessionId, questionCount };
 
     try {
       await client.post(`/lessons/session/${sessionId}/complete`);

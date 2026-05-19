@@ -22,6 +22,7 @@ body {
   min-height: 100dvh;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+  color: #2D3436;
 }
 
 /* Accessible touch targets */
@@ -80,4 +81,106 @@ body {
   .label-pill {
     @apply px-4 py-2 rounded-full bg-white text-text text-sm font-semibold shadow-soft;
   }
+
+  .app-screen {
+    @apply min-h-[100dvh] w-full max-w-[430px] mx-auto bg-[#F6FCFD] text-text;
+  }
+
+  .screen-top {
+    @apply flex items-start justify-between gap-4;
+  }
+
+  .circle-button {
+    @apply w-14 h-14 rounded-full bg-white shadow-soft flex items-center justify-center text-3xl text-text transition active:scale-95;
+  }
+
+  .kid-chip {
+    @apply flex flex-col items-center gap-1 text-base font-extrabold;
+  }
+
+  .kid-chip span {
+    @apply w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-soft;
+  }
+
+  .app-title {
+    @apply text-[30px] leading-tight font-extrabold text-text tracking-normal;
+  }
+
+  .app-subtitle {
+    @apply text-lg font-bold text-gray-500;
+  }
+
+  .soft-card {
+    @apply bg-white rounded-[24px] shadow-soft border border-gray-100;
+  }
+
+  .primary-pill {
+    @apply rounded-[18px] bg-[#71C9EE] text-white font-extrabold min-h-touch px-6 transition active:scale-95 disabled:opacity-50;
+  }
+
+  .outline-pill {
+    @apply rounded-[18px] bg-white text-[#71C9EE] border-2 border-[#71C9EE] font-extrabold min-h-touch px-6 transition active:scale-95;
+  }
+
+  .lesson-tile {
+    @apply aspect-square rounded-[22px] p-5 flex flex-col items-center justify-center gap-5 text-text shadow-soft transition active:scale-95;
+  }
+
+  .lesson-tile strong {
+    @apply text-xl font-extrabold;
+  }
+
+  .lesson-icon {
+    @apply w-16 h-16 rounded-full bg-white/70 flex items-center justify-center text-4xl font-extrabold;
+  }
+}
+
+.door {
+  position: relative;
+  width: 108px;
+  height: 162px;
+  border: 5px solid currentColor;
+  border-radius: 10px 10px 5px 5px;
+  background: color-mix(in srgb, currentColor 12%, white);
+  box-shadow: inset 0 0 0 4px color-mix(in srgb, currentColor 28%, white);
+}
+
+.door::before,
+.door::after {
+  content: '';
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  border: 3px solid currentColor;
+  border-radius: 4px;
+}
+
+.door::before {
+  top: 14px;
+  height: 54px;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.door::after {
+  bottom: 12px;
+  height: 60px;
+}
+
+.door-knob {
+  position: absolute;
+  right: 16px;
+  bottom: 42px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #766A54;
+}
+
+.door-orange { color: #F8C56B; }
+.door-blue { color: #71D4E8; }
+.door-green { color: #9BE6D1; }
+.door-pink { color: #F5A4B9; }
+
+input[type='range'] {
+  accent-color: #9DD9E8;
 }
