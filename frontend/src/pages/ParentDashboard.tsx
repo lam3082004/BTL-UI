@@ -16,9 +16,8 @@ export const ParentDashboard: React.FC = () => {
 
   useEffect(() => {
     if (!token) {
-      setChildren(getLocalChildren());
       setParent(null);
-      setIsLoading(false);
+      fetchDemoChildren();
       return;
     }
 
@@ -36,6 +35,20 @@ export const ParentDashboard: React.FC = () => {
     }
   };
 
+  const fetchDemoChildren = async () => {
+    try {
+      const response = await client.get('/children/demo');
+      const normalizedChildren = response.data.map(normalizeChildConfig);
+      setChildren(normalizedChildren);
+      setLocalChildren(normalizedChildren);
+    } catch (err) {
+      console.error('Failed to fetch demo children:', err);
+      setChildren(getLocalChildren());
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const fetchDashboardData = async () => {
     try {
       const profileRequest = client.get('/auth/profile').catch(() => null);
@@ -43,7 +56,10 @@ export const ParentDashboard: React.FC = () => {
       const [profileResponse, childrenResponse] = await Promise.all([profileRequest, childrenRequest]);
 
       setParent(profileResponse?.data || buildProfileFromToken(localStorage.getItem('jwtToken')));
-      const normalizedChildren = childrenResponse.data.map(normalizeChildConfig);
+      const sourceChildren = childrenResponse.data?.length
+        ? childrenResponse.data
+        : (await client.get('/children/demo')).data;
+      const normalizedChildren = sourceChildren.map(normalizeChildConfig);
       setChildren(normalizedChildren);
       setLocalChildren(normalizedChildren);
     } catch (err) {
