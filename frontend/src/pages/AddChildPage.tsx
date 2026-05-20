@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import client from '../api/client';
-import { MathOperation } from '../types';
+import { LessonActivity, MathOperation } from '../types';
 import { getLocalChildren, upsertLocalChild } from '../utils/childVisuals';
 
 const avatars = ['🦊', '🐼', '🦄', '🐯', '🐻'];
@@ -24,7 +24,7 @@ export const AddChildPage: React.FC = () => {
       avatar,
       minNumber: 1,
       maxNumber: 10,
-      allowedOperations: [MathOperation.ADDITION],
+      allowedOperations: [LessonActivity.COUNTING, MathOperation.ADDITION],
     };
 
     setIsSaving(true);

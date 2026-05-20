@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Child, MathOperation } from '../types';
-import { getChildVisual, getStoredChild } from '../utils/childVisuals';
+import { Child, EnabledLesson, LessonActivity, MathOperation } from '../types';
+import { getChildVisual, getStoredChild, normalizeChildConfig } from '../utils/childVisuals';
 
 const lessons = [
-  { title: 'Học Đếm', icon: '🍎', color: 'bg-[#FFD39A]', operation: MathOperation.ADDITION },
-  { title: 'Phép Cộng', icon: '+', color: 'bg-[#9DE8D0]', operation: MathOperation.ADDITION },
-  { title: 'Phép Trừ', icon: '−', color: 'bg-[#F7A6B8]', operation: MathOperation.SUBTRACTION },
-  { title: 'Phép Nhân', icon: '×', color: 'bg-[#9DD9E8]', operation: MathOperation.MULTIPLICATION },
-  { title: 'Phép Chia', icon: '÷', color: 'bg-[#C78BE8]', operation: MathOperation.DIVISION },
+  { title: 'Học Đếm', icon: '🍎', color: 'bg-[#FFD39A]', activity: LessonActivity.COUNTING, operation: MathOperation.ADDITION },
+  { title: 'Phép Cộng', icon: '+', color: 'bg-[#9DE8D0]', activity: MathOperation.ADDITION, operation: MathOperation.ADDITION },
+  { title: 'Phép Trừ', icon: '−', color: 'bg-[#F7A6B8]', activity: MathOperation.SUBTRACTION, operation: MathOperation.SUBTRACTION },
+  { title: 'Phép Nhân', icon: '×', color: 'bg-[#9DD9E8]', activity: MathOperation.MULTIPLICATION, operation: MathOperation.MULTIPLICATION },
+  { title: 'Phép Chia', icon: '÷', color: 'bg-[#C78BE8]', activity: MathOperation.DIVISION, operation: MathOperation.DIVISION },
 ];
 
 export const LessonSelectPage: React.FC = () => {
@@ -23,15 +23,18 @@ export const LessonSelectPage: React.FC = () => {
       navigate('/child-select');
       return;
     }
-    setChild(selected);
+    setChild(normalizeChildConfig(selected));
   }, [navigate]);
 
   if (!child) return null;
 
   const visual = getChildVisual(child);
 
-  const startLesson = (operation: MathOperation, title: string) => {
-    sessionStorage.setItem('selectedLesson', JSON.stringify({ operation, title }));
+  const enabledLessons = child.allowedOperations?.length ? child.allowedOperations : [LessonActivity.COUNTING, MathOperation.ADDITION];
+  const visibleLessons = lessons.filter((lesson) => enabledLessons.includes(lesson.activity));
+
+  const startLesson = (activity: EnabledLesson, operation: MathOperation, title: string) => {
+    sessionStorage.setItem('selectedLesson', JSON.stringify({ activity, operation, title }));
     navigate(`/child/${childId || child.id}/lesson`);
   };
 
@@ -54,13 +57,13 @@ export const LessonSelectPage: React.FC = () => {
         <p className="app-subtitle text-center">Hôm nay mình học gì nào? 💡</p>
 
         <div className="mt-9 grid grid-cols-2 gap-4">
-          {lessons.map((lesson, index) => (
+          {visibleLessons.map((lesson, index) => (
             <motion.button
               key={lesson.title}
               initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
-              onClick={() => startLesson(lesson.operation, lesson.title)}
+              onClick={() => startLesson(lesson.activity, lesson.operation, lesson.title)}
               className={`${lesson.color} lesson-tile`}
             >
               <span className="lesson-icon">{lesson.icon}</span>
@@ -68,6 +71,11 @@ export const LessonSelectPage: React.FC = () => {
             </motion.button>
           ))}
         </div>
+        {!visibleLessons.length && (
+          <div className="soft-card mt-8 p-5 text-center font-extrabold text-gray-500">
+            Chưa có dạng bài nào được bật cho bé.
+          </div>
+        )}
       </section>
     </main>
   );

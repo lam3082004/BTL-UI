@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import client from '../api/client';
-import { Child, MathOperation } from '../types';
-import { getChildVisual, getLocalChildById, upsertLocalChild } from '../utils/childVisuals';
+import { Child, EnabledLesson, LessonActivity, MathOperation } from '../types';
+import {
+  getChildVisual,
+  getLocalChildById,
+  maxVisualNumber,
+  normalizeAllowedLessons,
+  normalizeChildConfig,
+  rememberCountingPreference,
+  toBackendOperations,
+  upsertLocalChild,
+} from '../utils/childVisuals';
 
 const operations = [
+  { value: LessonActivity.COUNTING, label: 'Học đếm', icon: '🍎' },
   { value: MathOperation.ADDITION, label: 'Cộng', icon: '+' },
   { value: MathOperation.SUBTRACTION, label: 'Trừ', icon: '−' },
   { value: MathOperation.MULTIPLICATION, label: 'Nhân', icon: '×' },
@@ -17,7 +27,7 @@ export const ChildConfig: React.FC = () => {
   const [child, setChild] = useState<Child | null>(null);
   const [minNumber, setMinNumber] = useState(1);
   const [maxNumber, setMaxNumber] = useState(10);
-  const [selectedOperations, setSelectedOperations] = useState<MathOperation[]>([MathOperation.ADDITION]);
+  const [selectedOperations, setSelectedOperations] = useState<EnabledLesson[]>([LessonActivity.COUNTING, MathOperation.ADDITION]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -26,17 +36,23 @@ export const ChildConfig: React.FC = () => {
       if (!childId) return;
       try {
         const response = await client.get(`/children/${childId}`);
-        setChild(response.data);
-        setMinNumber(response.data.minNumber);
-        setMaxNumber(response.data.maxNumber);
-        setSelectedOperations(response.data.allowedOperations?.length ? response.data.allowedOperations : [MathOperation.ADDITION]);
+        const localOverride = getLocalChildById(childId);
+        const normalized = normalizeChildConfig({
+          ...response.data,
+          allowedOperations: localOverride?.allowedOperations || response.data.allowedOperations,
+        });
+        setChild(normalized);
+        setMinNumber(normalized.minNumber);
+        setMaxNumber(normalized.maxNumber);
+        setSelectedOperations(normalized.allowedOperations);
       } catch (err) {
         const localChild = getLocalChildById(childId);
         if (localChild) {
-          setChild(localChild);
-          setMinNumber(localChild.minNumber);
-          setMaxNumber(localChild.maxNumber);
-          setSelectedOperations(localChild.allowedOperations?.length ? localChild.allowedOperations : [MathOperation.ADDITION]);
+          const normalized = normalizeChildConfig(localChild);
+          setChild(normalized);
+          setMinNumber(normalized.minNumber);
+          setMaxNumber(normalized.maxNumber);
+          setSelectedOperations(normalized.allowedOperations);
         }
         console.error(err);
       } finally {
@@ -47,7 +63,7 @@ export const ChildConfig: React.FC = () => {
     fetchChild();
   }, [childId]);
 
-  const toggleOperation = (operation: MathOperation) => {
+  const toggleOperation = (operation: EnabledLesson) => {
     setSelectedOperations((current) => {
       if (current.includes(operation)) {
         return current.length === 1 ? current : current.filter((item) => item !== operation);
@@ -58,27 +74,35 @@ export const ChildConfig: React.FC = () => {
 
   const handleSave = async () => {
     if (!childId) return;
-    const safeMin = Math.min(minNumber, maxNumber);
-    const safeMax = Math.max(minNumber, maxNumber);
+    const safeMin = Math.max(1, Math.min(maxVisualNumber, Math.min(minNumber, maxNumber)));
+    const safeMax = Math.max(safeMin, Math.min(maxVisualNumber, Math.max(minNumber, maxNumber)));
+    const enabledLessons = normalizeAllowedLessons(selectedOperations);
 
     setIsSaving(true);
     try {
-      const payload = {
+      const localPayload = {
         minNumber: safeMin,
         maxNumber: safeMax,
-        allowedOperations: selectedOperations,
+        allowedOperations: enabledLessons,
+      };
+      const backendPayload = {
+        minNumber: safeMin,
+        maxNumber: safeMax,
+        allowedOperations: toBackendOperations(enabledLessons),
       };
       const token = localStorage.getItem('jwtToken');
+      rememberCountingPreference(childId, enabledLessons);
       if (token) {
-        await client.put(`/children/${childId}/config`, payload);
+        await client.put(`/children/${childId}/config`, backendPayload);
       }
       if (child) {
-        upsertLocalChild({ ...child, ...payload });
+        upsertLocalChild({ ...child, ...localPayload });
       }
       navigate('/parent-dashboard');
     } catch (err) {
       if (child) {
-        upsertLocalChild({ ...child, minNumber: safeMin, maxNumber: safeMax, allowedOperations: selectedOperations });
+        rememberCountingPreference(childId, enabledLessons);
+        upsertLocalChild({ ...child, minNumber: safeMin, maxNumber: safeMax, allowedOperations: enabledLessons });
         navigate('/parent-dashboard');
       }
       console.error(err);
@@ -125,24 +149,42 @@ export const ChildConfig: React.FC = () => {
                 {item.value}
               </strong>
             </div>
-            <input
-              type="range"
-              min="1"
-              max="1000"
-              value={item.value}
-              onChange={(event) => item.setter(Number(event.target.value))}
-              className="w-full"
-            />
+            <div className="grid grid-cols-[48px_1fr_48px] items-center gap-3">
+              <button
+                type="button"
+                className="circle-button h-12 w-12 text-2xl"
+                onClick={() => item.setter(Math.max(1, item.value - 1))}
+                aria-label={`Giảm ${item.label.toLowerCase()}`}
+              >
+                −
+              </button>
+              <input
+                type="range"
+                min="1"
+                max={maxVisualNumber}
+                value={item.value}
+                onChange={(event) => item.setter(Number(event.target.value))}
+                className="w-full"
+              />
+              <button
+                type="button"
+                className="circle-button h-12 w-12 text-2xl"
+                onClick={() => item.setter(Math.min(maxVisualNumber, item.value + 1))}
+                aria-label={`Tăng ${item.label.toLowerCase()}`}
+              >
+                +
+              </button>
+            </div>
             <div className="mt-4 flex justify-between text-gray-400">
               <span>1</span>
-              <span>1000</span>
+              <span>{maxVisualNumber}</span>
             </div>
           </div>
         ))}
       </section>
 
       <section className="soft-card mt-7 p-7">
-        <h2 className="text-2xl font-extrabold mb-6">➕ Phép tính được phép</h2>
+        <h2 className="text-2xl font-extrabold mb-6">🍎 Dạng bài được bật</h2>
         <div className="space-y-4">
           {operations.map((operation) => {
             const enabled = selectedOperations.includes(operation.value);

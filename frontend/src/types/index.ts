@@ -5,13 +5,19 @@ export enum MathOperation {
   DIVISION = 'DIVISION',
 }
 
+export enum LessonActivity {
+  COUNTING = 'COUNTING',
+}
+
+export type EnabledLesson = MathOperation | LessonActivity;
+
 export interface Child {
   id: string;
   name: string;
   avatar?: string;
   minNumber: number;
   maxNumber: number;
-  allowedOperations: MathOperation[];
+  allowedOperations: EnabledLesson[];
 }
 
 export interface Parent {

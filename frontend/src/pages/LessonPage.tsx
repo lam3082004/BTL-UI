@@ -13,15 +13,26 @@ import {
 } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import { useLesson } from '../hooks/useLesson';
-import { Child, MathOperation } from '../types';
-import { getChildVisual, getStoredChild } from '../utils/childVisuals';
+import { Child, EnabledLesson, LessonActivity, MathOperation } from '../types';
+import { getChildVisual, getStoredChild, maxVisualNumber } from '../utils/childVisuals';
 
 type LessonChoice = {
+  activity: EnabledLesson;
   operation: MathOperation;
   title: string;
 };
 
-const totalQuestions = 4;
+const readTotalQuestions = () => {
+  const saved = localStorage.getItem('numsenseParentSettings');
+  if (!saved) return 4;
+
+  try {
+    const value = Number(JSON.parse(saved).questionsPerLesson);
+    return Number.isFinite(value) ? Math.max(3, Math.min(8, value)) : 4;
+  } catch {
+    return 4;
+  }
+};
 
 const applePositions = [
   'left-[118px] top-[34px]',
@@ -34,6 +45,8 @@ const applePositions = [
   'left-[240px] top-[196px]',
   'left-[168px] top-[222px]',
   'left-[300px] top-[220px]',
+  'left-[96px] top-[218px]',
+  'left-[272px] top-[14px]',
 ];
 
 const itemThemes = [
@@ -46,12 +59,17 @@ const itemThemes = [
 
 const readStoredLesson = (): LessonChoice => {
   const value = sessionStorage.getItem('selectedLesson');
-  if (!value) return { operation: MathOperation.ADDITION, title: 'Học Đếm' };
+  if (!value) return { activity: LessonActivity.COUNTING, operation: MathOperation.ADDITION, title: 'Học Đếm' };
 
   try {
-    return JSON.parse(value) as LessonChoice;
+    const parsed = JSON.parse(value) as Partial<LessonChoice>;
+    return {
+      activity: parsed.activity || (parsed.title === 'Học Đếm' ? LessonActivity.COUNTING : parsed.operation || MathOperation.ADDITION),
+      operation: parsed.operation || MathOperation.ADDITION,
+      title: parsed.title || 'Học Đếm',
+    };
   } catch {
-    return { operation: MathOperation.ADDITION, title: 'Học Đếm' };
+    return { activity: LessonActivity.COUNTING, operation: MathOperation.ADDITION, title: 'Học Đếm' };
   }
 };
 
@@ -120,7 +138,7 @@ const buildQuestionCopy = (
 ) => {
   if (lessonTitle === 'Học Đếm') {
     return {
-      target: Math.min(10, Math.max(0, question.operand1)),
+      target: Math.min(maxVisualNumber, Math.max(0, question.operand1)),
       title: `${question.operand1} ${theme.item}`,
       text: `Kéo ${question.operand1} ${theme.itemName} vào ${theme.basketName}`,
     };
@@ -128,7 +146,7 @@ const buildQuestionCopy = (
 
   if (operation === MathOperation.SUBTRACTION) {
     return {
-      target: Math.min(10, Math.max(0, question.answer)),
+      target: Math.min(maxVisualNumber, Math.max(0, question.answer)),
       title: `${question.operand1} - ${question.operand2} = ?`,
       text: `Có ${question.operand1} ${theme.itemName}, bớt ${question.operand2}. Còn lại mấy?`,
     };
@@ -136,7 +154,7 @@ const buildQuestionCopy = (
 
   if (operation === MathOperation.MULTIPLICATION) {
     return {
-      target: Math.min(10, Math.max(0, question.answer)),
+      target: Math.min(maxVisualNumber, Math.max(0, question.answer)),
       title: `${question.operand1} × ${question.operand2} = ?`,
       text: `${question.operand1} nhóm, mỗi nhóm ${question.operand2} ${theme.itemName}. Có tất cả mấy?`,
     };
@@ -144,14 +162,14 @@ const buildQuestionCopy = (
 
   if (operation === MathOperation.DIVISION) {
     return {
-      target: Math.min(10, Math.max(0, question.answer)),
+      target: Math.min(maxVisualNumber, Math.max(0, question.answer)),
       title: `${question.operand1} ÷ ${question.operand2} = ?`,
       text: `Chia đều ${question.operand1} ${theme.itemName} vào ${question.operand2} nhóm. Mỗi nhóm mấy?`,
     };
   }
 
   return {
-    target: Math.min(10, Math.max(0, question.answer)),
+    target: Math.min(maxVisualNumber, Math.max(0, question.answer)),
     title: `${question.operand1} + ${question.operand2} = ?`,
     text: `${question.operand1} ${theme.itemName} thêm ${question.operand2} nữa. Tất cả mấy?`,
   };
@@ -164,6 +182,7 @@ export const LessonPage: React.FC = () => {
   const [lessonChoice] = useState(readStoredLesson);
   const [droppedAppleIds, setDroppedAppleIds] = useState<string[]>([]);
   const [results, setResults] = useState<boolean[]>([]);
+  const [totalQuestions] = useState(readTotalQuestions);
   const [modal, setModal] = useState<'correct' | 'wrong' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const startTimeRef = useRef(Date.now());
@@ -188,6 +207,7 @@ export const LessonPage: React.FC = () => {
     selectedChild?.minNumber || 1,
     selectedChild?.maxNumber || 10,
     allowedOperations,
+    lessonChoice.activity,
   );
 
   useEffect(() => {
@@ -213,7 +233,7 @@ export const LessonPage: React.FC = () => {
   const theme = itemThemes[(lesson.questionCount + results.length) % itemThemes.length];
   const questionCopy = buildQuestionCopy(lessonChoice.title, lessonChoice.operation, lesson.currentQuestion, theme);
   const targetCount = questionCopy.target;
-  const availableItems = Math.min(10, Math.max(targetCount + 2, 4));
+  const availableItems = Math.min(maxVisualNumber, Math.max(targetCount + 2, 4));
   const backRoute = childId ? `/child/${childId}/lessons` : '/child-select';
   const selectedApples = droppedAppleIds.length;
 

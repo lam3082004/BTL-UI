@@ -4,11 +4,11 @@ import { motion } from 'framer-motion';
 import client from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { Child, Parent } from '../types';
-import { getChildVisual, getLocalChildren, setLocalChildren } from '../utils/childVisuals';
+import { getChildVisual, getLocalChildren, normalizeChildConfig, setLocalChildren } from '../utils/childVisuals';
 
 export const ParentDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { token, logout } = useAuth();
+  const { token } = useAuth();
   const [children, setChildren] = useState<Child[]>([]);
   const [parent, setParent] = useState<Parent | null>(null);
   const [expandedChild, setExpandedChild] = useState<string | null>(null);
@@ -43,8 +43,9 @@ export const ParentDashboard: React.FC = () => {
       const [profileResponse, childrenResponse] = await Promise.all([profileRequest, childrenRequest]);
 
       setParent(profileResponse?.data || buildProfileFromToken(localStorage.getItem('jwtToken')));
-      setChildren(childrenResponse.data);
-      setLocalChildren(childrenResponse.data);
+      const normalizedChildren = childrenResponse.data.map(normalizeChildConfig);
+      setChildren(normalizedChildren);
+      setLocalChildren(normalizedChildren);
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
       setChildren(getLocalChildren());
@@ -92,7 +93,7 @@ export const ParentDashboard: React.FC = () => {
         </div>
         <button
           className="grid h-14 w-14 place-items-center rounded-full bg-[#9DE8D0] text-3xl text-white shadow-soft"
-          onClick={token ? logout : undefined}
+          onClick={() => navigate('/parent-settings')}
           title={parent?.email || 'Bảng điều khiển demo'}
         >
           ⚙

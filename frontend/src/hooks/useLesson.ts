@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import client from '../api/client';
-import { MathOperation } from '../types';
+import { EnabledLesson, LessonActivity, MathOperation } from '../types';
+import { maxVisualNumber } from '../utils/childVisuals';
 
 export interface Question {
   expression: string;
@@ -19,7 +20,7 @@ const normalizeQuestion = (
   maxNumber: number,
   allowedOperations: MathOperation[],
 ): Question => {
-  if (Number.isFinite(question.answer) && question.answer >= 0 && question.answer <= 10) {
+  if (Number.isFinite(question.answer) && question.answer >= 0 && question.answer <= maxVisualNumber) {
     return question;
   }
 
@@ -32,8 +33,8 @@ const createFallbackQuestion = (
   allowedOperations: MathOperation[],
 ): Question => {
   const operation = allowedOperations[0] || MathOperation.ADDITION;
-  const a = Math.min(5, randomNumber(minNumber, maxNumber));
-  const b = Math.min(5, randomNumber(minNumber, maxNumber));
+  const a = Math.min(maxVisualNumber / 2, randomNumber(minNumber, maxNumber));
+  const b = Math.min(maxVisualNumber / 2, randomNumber(minNumber, maxNumber));
 
   if (operation === MathOperation.SUBTRACTION) {
     const operand1 = Math.max(a, b);
@@ -81,7 +82,24 @@ const createFallbackQuestion = (
   };
 };
 
-export const useLesson = (childId: string, minNumber: number, maxNumber: number, allowedOperations: MathOperation[]) => {
+const createCountingQuestion = (minNumber: number, maxNumber: number): Question => {
+  const operand1 = Math.min(maxVisualNumber, randomNumber(minNumber, maxNumber));
+  return {
+    expression: `${operand1}`,
+    operand1,
+    operand2: 0,
+    operator: '',
+    answer: operand1,
+  };
+};
+
+export const useLesson = (
+  childId: string,
+  minNumber: number,
+  maxNumber: number,
+  allowedOperations: MathOperation[],
+  activity?: EnabledLesson,
+) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<Question | null>(null);
   const [questionCount, setQuestionCount] = useState(0);
@@ -91,6 +109,11 @@ export const useLesson = (childId: string, minNumber: number, maxNumber: number,
   const generateNewQuestion = useCallback(async () => {
     setIsLoading(true);
     try {
+      if (activity === LessonActivity.COUNTING) {
+        setCurrentQuestion(createCountingQuestion(minNumber, maxNumber));
+        return;
+      }
+
       const response = await client.post('/lessons/generate-question', {
         minNumber,
         maxNumber,
@@ -104,7 +127,7 @@ export const useLesson = (childId: string, minNumber: number, maxNumber: number,
     } finally {
       setIsLoading(false);
     }
-  }, [minNumber, maxNumber, allowedOperations]);
+  }, [minNumber, maxNumber, allowedOperations, activity]);
 
   const startSession = useCallback(async () => {
     setIsLoading(true);
@@ -117,13 +140,13 @@ export const useLesson = (childId: string, minNumber: number, maxNumber: number,
     } catch (err) {
       setSessionId(`local-${Date.now()}`);
       setQuestionCount(0);
-      setCurrentQuestion(createFallbackQuestion(minNumber, maxNumber, allowedOperations));
+      setCurrentQuestion(activity === LessonActivity.COUNTING ? createCountingQuestion(minNumber, maxNumber) : createFallbackQuestion(minNumber, maxNumber, allowedOperations));
       setError(null);
       console.error(err);
     } finally {
       setIsLoading(false);
     }
-  }, [childId, minNumber, maxNumber, allowedOperations, generateNewQuestion]);
+  }, [childId, minNumber, maxNumber, allowedOperations, activity, generateNewQuestion]);
 
   const submitAnswer = useCallback(
     async (userAnswer: number, responseTimeMs: number): Promise<boolean> => {
@@ -133,7 +156,7 @@ export const useLesson = (childId: string, minNumber: number, maxNumber: number,
 
       if (sessionId.startsWith('local-')) {
         setQuestionCount((prev) => prev + 1);
-        setCurrentQuestion(createFallbackQuestion(minNumber, maxNumber, allowedOperations));
+        setCurrentQuestion(activity === LessonActivity.COUNTING ? createCountingQuestion(minNumber, maxNumber) : createFallbackQuestion(minNumber, maxNumber, allowedOperations));
         return isCorrect;
       }
 
@@ -154,7 +177,7 @@ export const useLesson = (childId: string, minNumber: number, maxNumber: number,
         return false;
       }
     },
-    [sessionId, currentQuestion, minNumber, maxNumber, allowedOperations, generateNewQuestion],
+    [sessionId, currentQuestion, minNumber, maxNumber, allowedOperations, activity, generateNewQuestion],
   );
 
   const completeSession = useCallback(async () => {

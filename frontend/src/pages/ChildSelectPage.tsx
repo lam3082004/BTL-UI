@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import client from '../api/client';
 import { Child } from '../types';
-import { getChildVisual, getLocalChildren, setLocalChildren } from '../utils/childVisuals';
+import { getChildVisual, getLocalChildren, normalizeChildConfig, setLocalChildren } from '../utils/childVisuals';
 
 export const ChildSelectPage: React.FC = () => {
   const navigate = useNavigate();
@@ -15,8 +15,9 @@ export const ChildSelectPage: React.FC = () => {
     const fetchChildren = async () => {
       try {
         const response = await client.get('/children/demo');
-        setChildren(response.data);
-        setLocalChildren(response.data);
+        const normalizedChildren = response.data.map(normalizeChildConfig);
+        setChildren(normalizedChildren);
+        setLocalChildren(normalizedChildren);
       } catch (err) {
         setChildren(getLocalChildren());
         setError(null);
@@ -30,9 +31,10 @@ export const ChildSelectPage: React.FC = () => {
   }, []);
 
   const selectChild = (child: Child) => {
+    const normalizedChild = normalizeChildConfig(child);
     sessionStorage.setItem('selectedChildId', child.id);
-    sessionStorage.setItem('selectedChild', JSON.stringify(child));
-    navigate(`/child/${child.id}/home`);
+    sessionStorage.setItem('selectedChild', JSON.stringify(normalizedChild));
+    navigate(`/child/${normalizedChild.id}/home`);
   };
 
   if (isLoading) {

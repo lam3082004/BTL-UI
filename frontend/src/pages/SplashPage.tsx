@@ -45,7 +45,10 @@ export const SplashPage: React.FC = () => {
         <div className="mx-auto mb-4 grid h-20 w-20 place-items-center rounded-full bg-[#FFF3DF] text-5xl">👨‍👩‍👧</div>
         <h2 className="text-3xl font-extrabold text-text">DÀNH CHO PHỤ HUYNH</h2>
         <p className="mt-2 text-base font-bold text-gray-500">Quản lý tiến độ học tập của con</p>
-        <button className="primary-pill mt-7 w-full" onClick={() => navigate('/parent-dashboard')}>
+        <button className="primary-pill mt-7 w-full" onClick={() => navigate('/parent-login')}>
+          Đăng nhập / đăng ký Google
+        </button>
+        <button className="outline-pill mt-4 w-full" onClick={() => navigate('/parent-dashboard')}>
           Truy cập bảng điều khiển
         </button>
       </section>
