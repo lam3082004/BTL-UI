@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import {
   DndContext,
   DragEndEvent,
-  MouseSensor,
-  TouchSensor,
+  PointerSensor,
+  pointerWithin,
   useDraggable,
   useDroppable,
   useSensor,
@@ -106,9 +106,20 @@ const DraggableItem: React.FC<{
     <button
       ref={setNodeRef}
       type="button"
-      style={{ left: position.left, top: position.top, transform: `translate(-50%, -50%) ${dragTransform || ''}` }}
-      onClick={() => onQuickAdd(id)}
-      className={`absolute z-20 grid h-14 w-14 touch-none select-none place-items-center rounded-full bg-white/95 text-4xl shadow-md ring-2 ring-white/80 transition ${
+      style={{
+        left: position.left,
+        top: position.top,
+        transform: `translate(-50%, -50%) ${dragTransform || ''}`,
+        touchAction: 'none',
+      }}
+      onClick={(event) => {
+        if (isDragging) return;
+        event.stopPropagation();
+        onQuickAdd(id);
+      }}
+      className={`absolute z-20 grid h-14 w-14 select-none place-items-center rounded-full bg-white/95 text-4xl shadow-md ring-2 ring-white/80 ${
+        isDragging ? '' : 'transition'
+      } ${
         dropped ? 'pointer-events-none opacity-0 scale-75' : 'cursor-grab active:cursor-grabbing active:scale-95'
       } ${isDragging ? 'opacity-90 scale-110 shadow-xl ring-[#71C9EE]' : ''}`}
       aria-label={label}
@@ -207,8 +218,7 @@ export const LessonPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const startTimeRef = useRef(Date.now());
   const sensors = useSensors(
-    useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 8 } }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
 
   useEffect(() => {
@@ -314,7 +324,7 @@ export const LessonPage: React.FC = () => {
   const resetCurrent = () => setDroppedAppleIds([]);
 
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
       <main className="app-screen overflow-hidden px-6 py-8">
         <div className="screen-top">
           <button className="circle-button" onClick={() => navigate(backRoute)} aria-label="Quay lại">
