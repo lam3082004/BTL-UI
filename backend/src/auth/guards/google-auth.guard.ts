@@ -1,8 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { ExecutionContext, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
 export class GoogleAuthGuard extends AuthGuard('google') {
+  canActivate(context: ExecutionContext) {
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+      throw new ServiceUnavailableException('Google login is not configured');
+    }
+
+    return super.canActivate(context);
+  }
+
   getAuthenticateOptions() {
     return {
       scope: ['email', 'profile'],

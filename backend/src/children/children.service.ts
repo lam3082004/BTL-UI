@@ -7,6 +7,8 @@ import { CreateChildDto, UpdateChildConfigDto } from './dto';
 
 @Injectable()
 export class ChildrenService implements OnModuleInit {
+  private readonly currentConfigVersion = 2;
+
   constructor(
     @InjectRepository(Child)
     private childRepository: Repository<Child>,
@@ -23,6 +25,7 @@ export class ChildrenService implements OnModuleInit {
 
     const childCount = await this.childRepository.count();
     if (childCount > 0) {
+      await this.migrateExistingChildConfigs();
       return;
     }
 
@@ -41,25 +44,70 @@ export class ChildrenService implements OnModuleInit {
           parentId: savedParent.id,
           minNumber: 1,
           maxNumber: 10,
-          allowedOperations: [MathOperation.ADDITION],
+          allowedOperations: [MathOperation.COUNTING, MathOperation.ADDITION],
+          configVersion: this.currentConfigVersion,
         },
         {
           name: 'Bé Hùng',
           avatar: '👦',
           parentId: savedParent.id,
           minNumber: 1,
-          maxNumber: 20,
-          allowedOperations: [MathOperation.ADDITION, MathOperation.SUBTRACTION],
+          maxNumber: 12,
+          allowedOperations: [MathOperation.COUNTING, MathOperation.ADDITION, MathOperation.SUBTRACTION],
+          configVersion: this.currentConfigVersion,
         },
       ]),
     );
   }
 
+  private async migrateExistingChildConfigs() {
+    const children = await this.childRepository.find();
+    const outdatedChildren = children.filter((child) => (child.configVersion || 1) < this.currentConfigVersion);
+
+    if (!outdatedChildren.length) {
+      return;
+    }
+
+    await this.childRepository.save(
+      outdatedChildren.map((child) => {
+        const numberConfig = this.normalizeNumberConfig(child.minNumber, child.maxNumber);
+        return {
+          ...child,
+          ...numberConfig,
+          allowedOperations: this.normalizeAllowedOperations([
+            MathOperation.COUNTING,
+            ...(child.allowedOperations || []),
+          ]),
+          configVersion: this.currentConfigVersion,
+        };
+      }),
+    );
+  }
+
+  private normalizeAllowedOperations(allowedOperations?: MathOperation[]): MathOperation[] {
+    const values = Object.values(MathOperation);
+    const normalized = (allowedOperations || [MathOperation.COUNTING, MathOperation.ADDITION]).filter((operation) =>
+      values.includes(operation),
+    );
+    return normalized.length ? Array.from(new Set(normalized)) : [MathOperation.COUNTING, MathOperation.ADDITION];
+  }
+
+  private normalizeNumberConfig(minNumber?: number, maxNumber?: number) {
+    const rawMin = Number.isFinite(minNumber) ? Number(minNumber) : 1;
+    const rawMax = Number.isFinite(maxNumber) ? Number(maxNumber) : 10;
+    const min = Math.max(1, Math.min(12, Math.floor(Math.min(rawMin, rawMax))));
+    const max = Math.max(min, Math.min(12, Math.floor(Math.max(rawMin, rawMax))));
+    return { minNumber: min, maxNumber: max };
+  }
+
   async createChild(parentId: string, createChildDto: CreateChildDto): Promise<Child> {
+    const numberConfig = this.normalizeNumberConfig(createChildDto.minNumber, createChildDto.maxNumber);
     const child = this.childRepository.create({
       ...createChildDto,
+      ...numberConfig,
       parentId,
-      allowedOperations: createChildDto.allowedOperations || [MathOperation.ADDITION],
+      allowedOperations: this.normalizeAllowedOperations(createChildDto.allowedOperations),
+      configVersion: this.currentConfigVersion,
     });
     return this.childRepository.save(child);
   }
@@ -97,7 +145,17 @@ export class ChildrenService implements OnModuleInit {
       throw new BadRequestException('Unauthorized to update this child');
     }
 
-    Object.assign(child, updateConfigDto);
+    const nextNumberConfig = this.normalizeNumberConfig(
+      updateConfigDto.minNumber ?? child.minNumber,
+      updateConfigDto.maxNumber ?? child.maxNumber,
+    );
+
+    Object.assign(child, {
+      ...updateConfigDto,
+      ...nextNumberConfig,
+      allowedOperations: this.normalizeAllowedOperations(updateConfigDto.allowedOperations ?? child.allowedOperations),
+      configVersion: this.currentConfigVersion,
+    });
     return this.childRepository.save(child);
   }
 

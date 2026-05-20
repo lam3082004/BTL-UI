@@ -8,7 +8,6 @@ import {
   maxVisualNumber,
   normalizeAllowedLessons,
   normalizeChildConfig,
-  rememberCountingPreference,
   toBackendOperations,
   upsertLocalChild,
 } from '../utils/childVisuals';
@@ -36,11 +35,7 @@ export const ChildConfig: React.FC = () => {
       if (!childId) return;
       try {
         const response = await client.get(`/children/${childId}`);
-        const localOverride = getLocalChildById(childId);
-        const normalized = normalizeChildConfig({
-          ...response.data,
-          allowedOperations: localOverride?.allowedOperations || response.data.allowedOperations,
-        });
+        const normalized = normalizeChildConfig(response.data);
         setChild(normalized);
         setMinNumber(normalized.minNumber);
         setMaxNumber(normalized.maxNumber);
@@ -91,7 +86,6 @@ export const ChildConfig: React.FC = () => {
         allowedOperations: toBackendOperations(enabledLessons),
       };
       const token = localStorage.getItem('jwtToken');
-      rememberCountingPreference(childId, enabledLessons);
       if (token) {
         await client.put(`/children/${childId}/config`, backendPayload);
       }
@@ -101,7 +95,6 @@ export const ChildConfig: React.FC = () => {
       navigate('/parent-dashboard');
     } catch (err) {
       if (child) {
-        rememberCountingPreference(childId, enabledLessons);
         upsertLocalChild({ ...child, minNumber: safeMin, maxNumber: safeMax, allowedOperations: enabledLessons });
         navigate('/parent-dashboard');
       }

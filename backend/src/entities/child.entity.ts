@@ -3,6 +3,7 @@ import { Parent } from './parent.entity';
 import { LessonSession } from './lesson-session.entity';
 
 export enum MathOperation {
+  COUNTING = 'COUNTING',
   ADDITION = 'ADDITION',
   SUBTRACTION = 'SUBTRACTION',
   MULTIPLICATION = 'MULTIPLICATION',
@@ -35,6 +36,9 @@ export class Child {
 
   @Column('enum', { enum: MathOperation, array: true, default: [MathOperation.ADDITION] })
   allowedOperations: MathOperation[];
+
+  @Column({ type: 'int', default: 1 })
+  configVersion: number;
 
   @CreateDateColumn()
   createdAt: Date;

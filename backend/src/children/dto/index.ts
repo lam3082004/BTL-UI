@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsArray, Min, Max } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsArray, Min, Max, IsEnum } from 'class-validator';
 import { MathOperation } from '../../entities/child.entity';
 
 export class CreateChildDto {
@@ -11,31 +11,33 @@ export class CreateChildDto {
 
   @IsOptional()
   @IsNumber()
-  @Min(0)
+  @Min(1)
   minNumber?: number;
 
   @IsOptional()
   @IsNumber()
-  @Max(1000)
+  @Max(12)
   maxNumber?: number;
 
   @IsOptional()
   @IsArray()
+  @IsEnum(MathOperation, { each: true })
   allowedOperations?: MathOperation[];
 }
 
 export class UpdateChildConfigDto {
   @IsOptional()
   @IsNumber()
-  @Min(0)
+  @Min(1)
   minNumber?: number;
 
   @IsOptional()
   @IsNumber()
-  @Max(1000)
+  @Max(12)
   maxNumber?: number;
 
   @IsOptional()
   @IsArray()
+  @IsEnum(MathOperation, { each: true })
   allowedOperations?: MathOperation[];
 }

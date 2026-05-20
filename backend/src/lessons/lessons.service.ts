@@ -14,6 +14,17 @@ export interface MathQuestion {
   answer: number;
 }
 
+const visualMaxNumber = 12;
+
+const normalizeRange = (minNumber: number, maxNumber: number) => {
+  const min = Math.max(1, Math.min(visualMaxNumber, Math.floor(Math.min(minNumber, maxNumber))));
+  const max = Math.max(min, Math.min(visualMaxNumber, Math.floor(Math.max(minNumber, maxNumber))));
+  return { min, max };
+};
+
+const randomNumber = (min: number, max: number) =>
+  Math.floor(Math.random() * (max - min + 1)) + min;
+
 @Injectable()
 export class LessonsService {
   constructor(
@@ -42,46 +53,91 @@ export class LessonsService {
   }
 
   generateQuestion(generateQuestionDto: GenerateQuestionDto): MathQuestion {
-    const { minNumber, maxNumber, allowedOperations } = generateQuestionDto;
-
-    // Random operands
-    const operand1 = Math.floor(Math.random() * (maxNumber - minNumber + 1)) + minNumber;
-    const operand2 = Math.floor(Math.random() * (maxNumber - minNumber + 1)) + minNumber;
+    const { minNumber, maxNumber } = generateQuestionDto;
+    const { min, max } = normalizeRange(minNumber, maxNumber);
+    const allowedOperations = generateQuestionDto.allowedOperations?.length
+      ? generateQuestionDto.allowedOperations
+      : [MathOperation.COUNTING, MathOperation.ADDITION];
 
     // Pick random operation
     const operation = allowedOperations[Math.floor(Math.random() * allowedOperations.length)];
 
-    let operator = '';
-    let answer = 0;
-
     switch (operation) {
+      case MathOperation.COUNTING: {
+        const operand1 = randomNumber(min, max);
+        return {
+          expression: `${operand1}`,
+          operand1,
+          operand2: 0,
+          operator: '',
+          answer: operand1,
+        };
+      }
       case MathOperation.ADDITION:
-        operator = '+';
-        answer = operand1 + operand2;
-        break;
+        return this.generateAdditionQuestion(min, max);
       case MathOperation.SUBTRACTION:
-        operator = '-';
-        answer = operand1 - operand2;
-        break;
+        return this.generateSubtractionQuestion(min, max);
       case MathOperation.MULTIPLICATION:
-        operator = '×';
-        answer = operand1 * operand2;
-        break;
+        return this.generateMultiplicationQuestion(min, max);
       case MathOperation.DIVISION:
-        operator = '÷';
-        // Ensure clean division
-        answer = Math.floor(operand1 / (operand2 || 1));
-        break;
+        return this.generateDivisionQuestion(min, max);
       default:
-        operator = '+';
-        answer = operand1 + operand2;
+        return this.generateAdditionQuestion(min, max);
     }
+  }
 
+  private generateAdditionQuestion(min: number, max: number): MathQuestion {
+    const operand1 = randomNumber(min, Math.min(max, visualMaxNumber - 1));
+    const operand2 = randomNumber(1, Math.max(1, visualMaxNumber - operand1));
+    const answer = operand1 + operand2;
     return {
-      expression: `${operand1} ${operator} ${operand2} = ?`,
+      expression: `${operand1} + ${operand2} = ?`,
       operand1,
       operand2,
-      operator,
+      operator: '+',
+      answer,
+    };
+  }
+
+  private generateSubtractionQuestion(min: number, max: number): MathQuestion {
+    const operand1 = randomNumber(Math.max(min, 2), max);
+    const operand2 = randomNumber(1, operand1);
+    const answer = operand1 - operand2;
+    return {
+      expression: `${operand1} - ${operand2} = ?`,
+      operand1,
+      operand2,
+      operator: '-',
+      answer,
+    };
+  }
+
+  private generateMultiplicationQuestion(min: number, max: number): MathQuestion {
+    const operand1Min = Math.min(Math.max(1, min), 4);
+    const operand1Max = Math.max(operand1Min, Math.min(max, 4));
+    const operand1 = randomNumber(operand1Min, operand1Max);
+    const operand2 = randomNumber(1, Math.max(1, Math.floor(visualMaxNumber / operand1)));
+    const answer = operand1 * operand2;
+    return {
+      expression: `${operand1} × ${operand2} = ?`,
+      operand1,
+      operand2,
+      operator: '×',
+      answer,
+    };
+  }
+
+  private generateDivisionQuestion(min: number, max: number): MathQuestion {
+    const answerMin = Math.min(Math.max(1, min), 6);
+    const answerMax = Math.max(answerMin, Math.min(max, 6));
+    const answer = randomNumber(answerMin, answerMax);
+    const operand2 = randomNumber(1, Math.max(1, Math.floor(visualMaxNumber / answer)));
+    const operand1 = answer * operand2;
+    return {
+      expression: `${operand1} ÷ ${operand2} = ?`,
+      operand1,
+      operand2,
+      operator: '÷',
       answer,
     };
   }

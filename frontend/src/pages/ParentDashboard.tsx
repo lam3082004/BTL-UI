@@ -54,6 +54,11 @@ export const ParentDashboard: React.FC = () => {
     }
   };
 
+  const handleGoogleLogin = () => {
+    const apiBaseUrl = client.defaults.baseURL || 'http://localhost:3001';
+    window.location.href = `${apiBaseUrl}/auth/google`;
+  };
+
   const handleDeleteChild = async (childId: string) => {
     const confirmed = window.confirm('Bạn có chắc muốn xóa hồ sơ trẻ này?');
     if (!confirmed) return;
@@ -99,6 +104,23 @@ export const ParentDashboard: React.FC = () => {
           ⚙
         </button>
       </div>
+
+      {!token && (
+        <section className="soft-card mt-7 p-5">
+          <div className="flex items-start gap-4">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#FFF3DF] text-3xl">G</span>
+            <div className="min-w-0 flex-1">
+              <h2 className="text-xl font-extrabold">Đăng nhập Google</h2>
+              <p className="mt-1 text-sm font-bold leading-snug text-gray-500">
+                Dùng lần đầu để đăng ký tài khoản, lần sau chỉ cần truy cập bảng điều khiển.
+              </p>
+            </div>
+          </div>
+          <button className="primary-pill mt-5 w-full" onClick={handleGoogleLogin}>
+            Đăng nhập Google / đăng ký
+          </button>
+        </section>
+      )}
 
       <section className="mt-10">
         <div className="mb-6 flex items-center justify-between">

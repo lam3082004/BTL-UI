@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -13,23 +13,29 @@ export class AuthService {
   ) {}
 
   async validateOrCreateParent(googleProfile: any): Promise<Parent> {
-    const { id, displayName, emails, photos } = googleProfile;
-    const email = emails[0].value;
-    const avatarUrl = photos?.[0]?.value;
+    const googleId = googleProfile?.id;
+    const email = googleProfile?.emails?.[0]?.value;
+    const displayName = googleProfile?.displayName || email;
+    const avatarUrl = googleProfile?.photos?.[0]?.value;
+
+    if (!googleId || !email) {
+      throw new BadRequestException('Google account did not provide the required profile information');
+    }
 
     let parent = await this.parentRepository.findOne({
-      where: { googleId: id },
+      where: [{ googleId }, { email }],
     });
 
     if (!parent) {
       parent = this.parentRepository.create({
-        googleId: id,
+        googleId,
         email,
         name: displayName,
         avatarUrl,
       });
       await this.parentRepository.save(parent);
     } else {
+      parent.googleId = googleId;
       parent.email = email;
       parent.name = displayName;
       parent.avatarUrl = avatarUrl || parent.avatarUrl;
@@ -44,6 +50,7 @@ export class AuthService {
       sub: parent.id,
       email: parent.email,
       name: parent.name,
+      googleId: parent.googleId,
       avatarUrl: parent.avatarUrl,
     };
     return this.jwtService.sign(payload);

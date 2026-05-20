@@ -48,7 +48,6 @@ export const demoChildren: Child[] = [
 ];
 
 const localChildrenKey = 'numsenseLocalChildren';
-const countPreferencePrefix = 'numsenseCountingEnabled:';
 
 export const maxVisualNumber = 12;
 
@@ -58,8 +57,7 @@ export const isMathOperation = (value: EnabledLesson): value is MathOperation =>
 
 export const normalizeAllowedLessons = (allowedOperations?: EnabledLesson[], childId?: string): EnabledLesson[] => {
   const configured = allowedOperations?.length ? allowedOperations : [LessonActivity.COUNTING, MathOperation.ADDITION];
-  const countingPreference = childId ? localStorage.getItem(`${countPreferencePrefix}${childId}`) : null;
-  const includeCounting = countingPreference === null ? configured.includes(LessonActivity.COUNTING) || Boolean(childId) : countingPreference === 'true';
+  const includeCounting = configured.includes(LessonActivity.COUNTING) || Boolean(childId && !allowedOperations?.length);
   const next: EnabledLesson[] = configured.filter((item) => item !== LessonActivity.COUNTING);
 
   if (includeCounting) {
@@ -81,10 +79,6 @@ export const normalizeChildConfig = (child: Child): Child => {
     maxNumber: safeMax,
     allowedOperations: normalizeAllowedLessons(child.allowedOperations, child.id),
   };
-};
-
-export const rememberCountingPreference = (childId: string, enabledLessons: EnabledLesson[]) => {
-  localStorage.setItem(`${countPreferencePrefix}${childId}`, String(enabledLessons.includes(LessonActivity.COUNTING)));
 };
 
 export const toBackendOperations = (enabledLessons: EnabledLesson[]): MathOperation[] => {
