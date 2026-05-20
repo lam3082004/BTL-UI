@@ -34,19 +34,19 @@ const readTotalQuestions = () => {
   }
 };
 
-const applePositions = [
-  'left-[118px] top-[34px]',
-  'left-[194px] top-[6px]',
-  'left-[260px] top-[54px]',
-  'left-[82px] top-[92px]',
-  'left-[207px] top-[104px]',
-  'left-[286px] top-[132px]',
-  'left-[132px] top-[160px]',
-  'left-[240px] top-[196px]',
-  'left-[168px] top-[222px]',
-  'left-[300px] top-[220px]',
-  'left-[96px] top-[218px]',
-  'left-[272px] top-[14px]',
+const itemPositions = [
+  { left: '26%', top: '9%' },
+  { left: '48%', top: '2%' },
+  { left: '67%', top: '14%' },
+  { left: '16%', top: '24%' },
+  { left: '50%', top: '29%' },
+  { left: '73%', top: '35%' },
+  { left: '28%', top: '44%' },
+  { left: '61%', top: '53%' },
+  { left: '38%', top: '61%' },
+  { left: '76%', top: '61%' },
+  { left: '19%', top: '59%' },
+  { left: '69%', top: '4%' },
 ];
 
 const itemThemes = [
@@ -73,9 +73,15 @@ const readStoredLesson = (): LessonChoice => {
   }
 };
 
-const DraggableItem: React.FC<{ id: string; className: string; dropped: boolean; item: string; label: string }> = ({
+const DraggableItem: React.FC<{
+  id: string;
+  position: { left: string; top: string };
+  dropped: boolean;
+  item: string;
+  label: string;
+}> = ({
   id,
-  className,
+  position,
   dropped,
   item,
   label,
@@ -84,13 +90,14 @@ const DraggableItem: React.FC<{ id: string; className: string; dropped: boolean;
     id,
     disabled: dropped,
   });
+  const dragTransform = CSS.Translate.toString(transform);
 
   return (
     <button
       ref={setNodeRef}
       type="button"
-      style={{ transform: CSS.Translate.toString(transform) }}
-      className={`absolute z-20 text-5xl touch-none select-none transition ${className} ${
+      style={{ left: position.left, top: position.top, transform: `translate(-50%, -50%) ${dragTransform || ''}` }}
+      className={`absolute z-20 text-5xl touch-none select-none transition ${
         dropped ? 'opacity-20 scale-75' : 'cursor-grab active:cursor-grabbing'
       } ${isDragging ? 'opacity-80 scale-110' : ''}`}
       aria-label={label}
@@ -279,7 +286,7 @@ export const LessonPage: React.FC = () => {
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <main className="app-screen px-8 py-10 overflow-hidden">
+      <main className="app-screen overflow-hidden px-6 py-8">
         <div className="screen-top">
           <button className="circle-button" onClick={() => navigate(backRoute)} aria-label="Quay lại">
             ←
@@ -290,14 +297,14 @@ export const LessonPage: React.FC = () => {
           </div>
         </div>
 
-        <section className="mt-10">
+        <section className="mt-8">
           <p className="text-gray-500 font-extrabold">BÀI HỌC</p>
           <div className="flex items-center justify-between">
             <h1 className="app-title">{lessonChoice.title.toUpperCase()}</h1>
             <div className="text-5xl">🧺</div>
           </div>
 
-          <div className="mt-7 rounded-[16px] px-5 py-4 flex items-center justify-between gap-3" style={{ backgroundColor: theme.bg }}>
+          <div className="mt-6 flex items-center justify-between gap-3 rounded-[16px] px-4 py-4" style={{ backgroundColor: theme.bg }}>
             <div className="min-w-0">
               <div className="text-2xl font-extrabold">{questionCopy.title}</div>
               <p className="mt-1 text-sm font-extrabold text-gray-500 leading-snug">{questionCopy.text}</p>
@@ -305,15 +312,15 @@ export const LessonPage: React.FC = () => {
             <span className="shrink-0 text-4xl">{theme.basket}</span>
           </div>
 
-          <div className="relative mt-2 h-[365px]">
-            <div className="absolute left-1/2 top-10 z-0 -translate-x-1/2 text-[210px] leading-none opacity-95">{theme.scene}</div>
+          <div className="relative mx-auto mt-2 h-[340px] w-full max-w-[360px]">
+            <div className="absolute left-1/2 top-10 z-0 -translate-x-1/2 text-[clamp(150px,48vw,210px)] leading-none opacity-95">{theme.scene}</div>
             {Array.from({ length: availableItems }, (_, index) => {
               const appleId = `item-${index}`;
               return (
                 <DraggableItem
                   key={appleId}
                   id={appleId}
-                  className={applePositions[index % applePositions.length]}
+                  position={itemPositions[index % itemPositions.length]}
                   dropped={droppedAppleIds.includes(appleId)}
                   item={theme.item}
                   label={`Kéo ${theme.itemName} vào ${theme.basketName}`}

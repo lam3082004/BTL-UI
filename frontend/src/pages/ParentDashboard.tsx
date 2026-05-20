@@ -59,25 +59,6 @@ export const ParentDashboard: React.FC = () => {
     window.location.href = `${apiBaseUrl}/auth/google`;
   };
 
-  const handleDeleteChild = async (childId: string) => {
-    const confirmed = window.confirm('Bạn có chắc muốn xóa hồ sơ trẻ này?');
-    if (!confirmed) return;
-
-    try {
-      if (token) {
-        await client.delete(`/children/${childId}`);
-      }
-      setChildren((current) => {
-        const next = current.filter((child) => child.id !== childId);
-        setLocalChildren(next);
-        return next;
-      });
-      setExpandedChild(null);
-    } catch (err) {
-      console.error('Failed to delete child:', err);
-    }
-  };
-
   if (isLoading) {
     return (
       <main className="app-screen grid place-items-center">
@@ -87,14 +68,14 @@ export const ParentDashboard: React.FC = () => {
   }
 
   return (
-    <main className="app-screen px-8 py-9">
+    <main className="app-screen px-6 py-8">
       <div className="screen-top items-center">
         <button className="circle-button" onClick={() => navigate('/')} aria-label="Quay lại">
           ←
         </button>
         <div className="text-center">
           <p className="text-gray-400 font-extrabold">NumSense</p>
-          <h1 className="app-title">BẢNG ĐIỀU KHIỂN</h1>
+          <h1 className="app-title text-[28px]">BẢNG ĐIỀU KHIỂN</h1>
         </div>
         <button
           className="grid h-14 w-14 place-items-center rounded-full bg-[#9DE8D0] text-3xl text-white shadow-soft"
@@ -122,40 +103,42 @@ export const ParentDashboard: React.FC = () => {
         </section>
       )}
 
-      <section className="mt-10">
+      <section className="mt-9">
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-2xl font-extrabold">DANH SÁCH TRẺ</h2>
-          <button className="grid h-14 w-14 place-items-center rounded-full bg-[#9DE8D0] text-4xl text-white shadow-soft" onClick={() => navigate('/add-child')} aria-label="Thêm trẻ">
-            +
-          </button>
         </div>
 
         <div className="soft-card p-4">
+          {!children.length && (
+            <div className="py-8 text-center">
+              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#E4F8FF] text-4xl">👶</div>
+              <h3 className="mt-4 text-xl font-extrabold">Chưa có hồ sơ trẻ</h3>
+              <p className="mt-2 text-sm font-bold text-gray-400">Phần thêm/bớt hồ sơ có thể bổ sung sau.</p>
+            </div>
+          )}
+
           {children.map((child, index) => {
             const visual = getChildVisual(child, index);
             const expanded = expandedChild === child.id;
             return (
               <div key={child.id} className={index > 0 ? 'border-t border-gray-100 pt-4 mt-4' : ''}>
-                <div className="grid grid-cols-[56px_1fr_36px] items-center gap-3">
-                  <div className="grid h-14 w-14 place-items-center rounded-full text-3xl" style={{ backgroundColor: visual.color }}>
+                <div className="grid grid-cols-[52px_1fr] items-center gap-3">
+                  <div className="grid h-[52px] w-[52px] place-items-center rounded-full text-3xl shadow-sm" style={{ backgroundColor: visual.color }}>
                     {visual.avatar}
                   </div>
                   <button
                     onClick={() => setExpandedChild(expanded ? null : child.id)}
-                    className={`flex h-14 items-center justify-between rounded-full border-2 px-5 text-left font-extrabold transition ${
+                    className={`flex min-h-[56px] min-w-0 items-center justify-between rounded-[18px] border-2 px-4 text-left font-extrabold transition ${
                       expanded ? 'border-[#FFD39A]' : 'border-gray-200'
                     }`}
                   >
-                    {child.name}
-                    <span>{expanded ? '⌃' : '⌄'}</span>
-                  </button>
-                  <button className="text-3xl text-red-300" onClick={() => handleDeleteChild(child.id)} aria-label="Xóa trẻ">
-                    🗑
+                    <span className="truncate">{child.name}</span>
+                    <span className="ml-3 shrink-0">{expanded ? '⌃' : '⌄'}</span>
                   </button>
                 </div>
 
                 {expanded && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="ml-[68px] mt-4 grid grid-cols-2 gap-3">
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 grid grid-cols-2 gap-3 pl-[64px]">
                     <button className="rounded-[16px] bg-[#9DD9E8] px-4 py-4 text-white font-extrabold" onClick={() => navigate(`/progress-report/${child.id}`)}>
                       📊 Báo cáo
                     </button>
@@ -175,10 +158,10 @@ export const ParentDashboard: React.FC = () => {
             { icon: '📚', value: Math.max(0, children.length - 1), label: 'Đang học', color: 'bg-[#ECF8ED]' },
             { icon: '🏆', value: Math.max(0, Math.floor(children.length / 2)), label: 'Hoàn thành', color: 'bg-[#FFF3DF]' },
           ].map((item) => (
-            <div key={item.label} className={`${item.color} rounded-[16px] p-4 text-center shadow-sm`}>
-              <div className="text-4xl">{item.icon}</div>
-              <strong className="mt-2 block text-3xl">{item.value}</strong>
-              <span className="text-sm font-bold text-gray-500">{item.label}</span>
+            <div key={item.label} className={`${item.color} rounded-[16px] p-3 text-center shadow-sm`}>
+              <div className="text-3xl">{item.icon}</div>
+              <strong className="mt-2 block text-2xl">{item.value}</strong>
+              <span className="text-xs font-bold leading-tight text-gray-500">{item.label}</span>
             </div>
           ))}
         </div>

@@ -9,7 +9,7 @@ export const SplashPage: React.FC = () => {
       <motion.button
         type="button"
         onClick={() => navigate('/child-select')}
-        className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-8 py-10 text-center"
+        className="relative flex min-h-[420px] flex-1 flex-col items-center justify-center overflow-hidden px-6 py-8 text-center"
         whileTap={{ scale: 0.98 }}
       >
         <motion.span
@@ -34,15 +34,15 @@ export const SplashPage: React.FC = () => {
           📚
         </motion.span>
 
-        <div className="mb-7 grid h-28 w-28 place-items-center rounded-full bg-white text-7xl shadow-soft">🤖</div>
-        <div className="rounded-[24px] bg-white/90 px-8 py-6 shadow-soft">
+        <div className="mb-6 grid h-24 w-24 place-items-center rounded-full bg-white text-6xl shadow-soft">🤖</div>
+        <div className="rounded-[24px] bg-white/90 px-6 py-5 shadow-soft">
           <h1 className="text-4xl font-extrabold text-[#5BBFB5]">DÀNH CHO BÉ</h1>
           <p className="mt-2 text-lg font-bold text-gray-500">Tap để bắt đầu</p>
         </div>
       </motion.button>
 
-      <section className="rounded-t-[32px] bg-white px-8 py-10 text-center shadow-[0_-8px_24px_rgba(0,0,0,0.05)]">
-        <div className="mx-auto mb-4 grid h-20 w-20 place-items-center rounded-full bg-[#FFF3DF] text-5xl">👨‍👩‍👧</div>
+      <section className="rounded-t-[32px] bg-white px-6 py-8 text-center shadow-[0_-8px_24px_rgba(0,0,0,0.05)]">
+        <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-[#FFF3DF] text-4xl">👨‍👩‍👧</div>
         <h2 className="text-3xl font-extrabold text-text">DÀNH CHO PHỤ HUYNH</h2>
         <p className="mt-2 text-base font-bold text-gray-500">Quản lý tiến độ học tập của con</p>
         <button className="primary-pill mt-7 w-full" onClick={() => navigate('/parent-login')}>

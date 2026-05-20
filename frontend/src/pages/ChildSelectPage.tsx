@@ -46,7 +46,7 @@ export const ChildSelectPage: React.FC = () => {
   }
 
   return (
-    <main className="app-screen px-8 py-10">
+    <main className="app-screen px-6 py-8">
       <div className="screen-top">
         <button className="circle-button" onClick={() => navigate('/')} aria-label="Quay lại">
           ←
@@ -54,7 +54,7 @@ export const ChildSelectPage: React.FC = () => {
         <div className="text-5xl">🏠</div>
       </div>
 
-      <section className="mt-10">
+      <section className="mt-8">
         <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
           <h1 className="app-title">CHÀO CÁC BÉ!</h1>
           <p className="app-subtitle">AI ĐÂY NHỈ? 🤔</p>
@@ -62,7 +62,7 @@ export const ChildSelectPage: React.FC = () => {
 
         {error && <div className="soft-card p-4 mb-6 text-center font-bold text-red-500">{error}</div>}
 
-        <div className="grid grid-cols-2 gap-x-10 gap-y-9">
+        <div className="grid grid-cols-2 gap-4">
           {children.map((child, index) => {
             const visual = getChildVisual(child, index);
             return (
@@ -72,12 +72,12 @@ export const ChildSelectPage: React.FC = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: index * 0.06 }}
                 onClick={() => selectChild(child)}
-                className="soft-card min-h-[260px] px-4 py-5 flex flex-col items-center justify-between active:scale-95 transition"
+                className="soft-card min-h-[230px] px-3 py-4 flex flex-col items-center justify-between active:scale-95 transition"
               >
-                <div className={`door ${visual.doorClass}`}>
+                <div className={`door scale-90 ${visual.doorClass}`}>
                   <span className="door-knob" />
                 </div>
-                <span className="rounded-full px-5 py-2 text-white font-extrabold" style={{ backgroundColor: visual.color }}>
+                <span className="max-w-full rounded-full px-4 py-2 text-center text-sm font-extrabold text-white" style={{ backgroundColor: visual.color }}>
                   {child.name}
                 </span>
               </motion.button>
