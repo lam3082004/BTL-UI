@@ -39,7 +39,7 @@ export const LessonSelectPage: React.FC = () => {
   };
 
   return (
-    <main className="app-screen px-6 py-8">
+    <main className="app-screen px-5 py-6">
       <div className="screen-top">
         <button className="circle-button" onClick={() => navigate(`/child/${child.id}/home`)} aria-label="Quay lại">
           ←
@@ -50,13 +50,13 @@ export const LessonSelectPage: React.FC = () => {
         </div>
       </div>
 
-      <section className="mt-9">
+      <section className="mt-7">
         <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="app-title text-center">
           CHỌN BÀI HỌC
         </motion.h1>
         <p className="app-subtitle text-center">Hôm nay mình học gì nào? 💡</p>
 
-        <div className="mt-8 grid grid-cols-2 gap-4">
+        <div className="mt-7 grid grid-cols-2 gap-3">
           {visibleLessons.map((lesson, index) => (
             <motion.button
               key={lesson.title}
@@ -64,7 +64,7 @@ export const LessonSelectPage: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               onClick={() => startLesson(lesson.activity, lesson.operation, lesson.title)}
-              className={`${lesson.color} lesson-tile min-h-[154px] gap-3 p-4 text-center`}
+              className={`${lesson.color} lesson-tile min-h-[142px] gap-2 p-3 text-center`}
             >
               <span className="lesson-icon h-14 w-14 text-3xl">{lesson.icon}</span>
               <strong className="text-lg leading-tight">{lesson.title}</strong>

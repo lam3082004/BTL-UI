@@ -117,7 +117,7 @@ const DraggableItem: React.FC<{
         event.stopPropagation();
         onQuickAdd(id);
       }}
-      className={`absolute z-20 grid h-14 w-14 select-none place-items-center rounded-full bg-white/95 text-4xl shadow-md ring-2 ring-white/80 ${
+      className={`absolute z-20 grid h-12 w-12 select-none place-items-center rounded-full bg-white/95 text-3xl shadow-md ring-2 ring-white/80 sm:h-14 sm:w-14 sm:text-4xl ${
         isDragging ? '' : 'transition'
       } ${
         dropped ? 'pointer-events-none opacity-0 scale-75' : 'cursor-grab active:cursor-grabbing active:scale-95'
@@ -142,16 +142,16 @@ const BasketDropZone: React.FC<{ count: number; target: number; item: string; ba
   return (
     <div
       ref={setNodeRef}
-      className={`absolute bottom-0 left-1/2 z-10 h-36 w-44 -translate-x-1/2 rounded-[24px] border-2 border-dashed bg-white/80 shadow-sm transition ${
+      className={`absolute bottom-0 left-1/2 z-10 h-32 w-40 -translate-x-1/2 rounded-[24px] border-2 border-dashed bg-white/80 shadow-sm transition ${
         isOver ? 'scale-105 border-[#71C9EE] bg-[#E4F8FF] shadow-lg' : 'border-gray-300'
       }`}
     >
-      <div className="absolute inset-x-0 top-2 flex max-h-20 flex-wrap justify-center overflow-hidden px-3 text-3xl leading-none">
+      <div className="absolute inset-x-0 top-2 flex max-h-16 flex-wrap justify-center overflow-hidden px-3 text-2xl leading-none">
         {Array.from({ length: count }, (_, index) => (
           <span key={index}>{item}</span>
         ))}
       </div>
-      <div className="absolute inset-x-0 bottom-1 text-center text-7xl leading-none">{basket}</div>
+      <div className="absolute inset-x-0 bottom-1 text-center text-6xl leading-none">{basket}</div>
       <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 rounded-full bg-white px-4 py-1 text-sm font-extrabold text-gray-500 shadow-sm">
         {count}/{target}
       </div>
@@ -325,35 +325,37 @@ export const LessonPage: React.FC = () => {
 
   return (
     <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
-      <main className="app-screen overflow-hidden px-6 py-8">
-        <div className="screen-top">
+      <main className="app-screen overflow-hidden px-5 py-6">
+        <div className="screen-top items-center">
           <button className="circle-button" onClick={() => navigate(backRoute)} aria-label="Quay lại">
             ←
           </button>
           <div className="kid-chip">
             <span style={{ backgroundColor: visual.color }}>{visual.avatar}</span>
-            <strong>{selectedChild.name.toUpperCase()}</strong>
+            <strong className="max-w-[96px] truncate">{selectedChild.name.toUpperCase()}</strong>
           </div>
         </div>
 
-        <section className="mt-8">
-          <p className="text-gray-500 font-extrabold">BÀI HỌC</p>
-          <div className="flex items-center justify-between">
-            <h1 className="app-title">{lessonChoice.title.toUpperCase()}</h1>
-            <div className="text-5xl">🧺</div>
+        <section className="mt-5">
+          <div className="flex items-end justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-extrabold text-gray-400">BÀI HỌC</p>
+              <h1 className="app-title truncate text-[26px]">{lessonChoice.title.toUpperCase()}</h1>
+            </div>
+            <div className="shrink-0 text-4xl">🧺</div>
           </div>
 
-          <div className="mt-6 flex items-center justify-between gap-3 rounded-[16px] px-4 py-4 shadow-sm" style={{ backgroundColor: theme.bg }}>
+          <div className="mt-4 flex items-center justify-between gap-3 rounded-[16px] px-4 py-3 shadow-sm" style={{ backgroundColor: theme.bg }}>
             <div className="min-w-0">
-              <div className="text-2xl font-extrabold">{questionCopy.title}</div>
+              <div className="text-[22px] font-extrabold leading-tight">{questionCopy.title}</div>
               <p className="mt-1 text-sm font-extrabold text-gray-500 leading-snug">{questionCopy.text}</p>
             </div>
-            <span className="shrink-0 text-4xl">{theme.basket}</span>
+            <span className="shrink-0 text-3xl">{theme.basket}</span>
           </div>
 
-          <div className="relative mx-auto mt-3 h-[340px] w-full max-w-[360px] rounded-[22px] bg-white/45">
-            <div className="absolute left-1/2 top-10 z-0 -translate-x-1/2 text-[clamp(150px,48vw,210px)] leading-none opacity-90">{theme.scene}</div>
-            <div className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold text-gray-500 shadow-sm">
+          <div className="relative mx-auto mt-3 h-[min(42dvh,310px)] min-h-[280px] w-full max-w-[360px] rounded-[22px] bg-white/45">
+            <div className="absolute left-1/2 top-8 z-0 -translate-x-1/2 text-[clamp(130px,42vw,188px)] leading-none opacity-90">{theme.scene}</div>
+            <div className="absolute left-3 top-3 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold text-gray-500 shadow-sm">
               Chạm hoặc kéo
             </div>
             {Array.from({ length: availableItems }, (_, index) => {
@@ -373,7 +375,7 @@ export const LessonPage: React.FC = () => {
             <BasketDropZone count={selectedApples} target={targetCount} item={theme.item} basket={theme.basket} />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 mt-7">
+          <div className="mt-8 grid grid-cols-2 gap-3">
             <button className="outline-pill" onClick={resetCurrent} disabled={isSubmitting}>
               Đặt lại
             </button>
@@ -382,7 +384,7 @@ export const LessonPage: React.FC = () => {
             </button>
           </div>
 
-          <div className="soft-card mt-6 flex justify-around p-4">
+          <div className="soft-card mt-4 flex justify-around p-3">
             {Array.from({ length: totalQuestions }, (_, index) => {
               const result = results[index];
               return (
