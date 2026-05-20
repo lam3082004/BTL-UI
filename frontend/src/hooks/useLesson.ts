@@ -156,7 +156,6 @@ export const useLesson = (
 
       if (sessionId.startsWith('local-')) {
         setQuestionCount((prev) => prev + 1);
-        setCurrentQuestion(activity === LessonActivity.COUNTING ? createCountingQuestion(minNumber, maxNumber) : createFallbackQuestion(minNumber, maxNumber, allowedOperations));
         return isCorrect;
       }
 
@@ -169,7 +168,6 @@ export const useLesson = (
         });
 
         setQuestionCount((prev) => prev + 1);
-        await generateNewQuestion();
         return isCorrect;
       } catch (err) {
         setError('Failed to save result');

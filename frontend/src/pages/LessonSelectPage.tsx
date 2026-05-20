@@ -5,11 +5,11 @@ import { Child, EnabledLesson, LessonActivity, MathOperation } from '../types';
 import { getChildVisual, getStoredChild, normalizeChildConfig } from '../utils/childVisuals';
 
 const lessons = [
-  { title: 'Học Đếm', icon: '🍎', color: 'bg-[#FFD39A]', activity: LessonActivity.COUNTING, operation: MathOperation.ADDITION },
-  { title: 'Phép Cộng', icon: '+', color: 'bg-[#9DE8D0]', activity: MathOperation.ADDITION, operation: MathOperation.ADDITION },
-  { title: 'Phép Trừ', icon: '−', color: 'bg-[#F7A6B8]', activity: MathOperation.SUBTRACTION, operation: MathOperation.SUBTRACTION },
-  { title: 'Phép Nhân', icon: '×', color: 'bg-[#9DD9E8]', activity: MathOperation.MULTIPLICATION, operation: MathOperation.MULTIPLICATION },
-  { title: 'Phép Chia', icon: '÷', color: 'bg-[#C78BE8]', activity: MathOperation.DIVISION, operation: MathOperation.DIVISION },
+  { title: 'Học Đếm', hint: 'Kéo đủ số lượng', icon: '🍎', color: 'bg-[#FFD39A]', activity: LessonActivity.COUNTING, operation: MathOperation.ADDITION },
+  { title: 'Phép Cộng', hint: 'Gộp thêm vào giỏ', icon: '+', color: 'bg-[#9DE8D0]', activity: MathOperation.ADDITION, operation: MathOperation.ADDITION },
+  { title: 'Phép Trừ', hint: 'Bớt đi rồi đếm', icon: '−', color: 'bg-[#F7A6B8]', activity: MathOperation.SUBTRACTION, operation: MathOperation.SUBTRACTION },
+  { title: 'Phép Nhân', hint: 'Nhiều nhóm bằng nhau', icon: '×', color: 'bg-[#9DD9E8]', activity: MathOperation.MULTIPLICATION, operation: MathOperation.MULTIPLICATION },
+  { title: 'Phép Chia', hint: 'Chia đều từng nhóm', icon: '÷', color: 'bg-[#C78BE8]', activity: MathOperation.DIVISION, operation: MathOperation.DIVISION },
 ];
 
 export const LessonSelectPage: React.FC = () => {
@@ -39,7 +39,7 @@ export const LessonSelectPage: React.FC = () => {
   };
 
   return (
-    <main className="app-screen px-8 py-10">
+    <main className="app-screen px-6 py-8">
       <div className="screen-top">
         <button className="circle-button" onClick={() => navigate(`/child/${child.id}/home`)} aria-label="Quay lại">
           ←
@@ -50,13 +50,13 @@ export const LessonSelectPage: React.FC = () => {
         </div>
       </div>
 
-      <section className="mt-12">
+      <section className="mt-9">
         <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="app-title text-center">
           CHỌN BÀI HỌC
         </motion.h1>
         <p className="app-subtitle text-center">Hôm nay mình học gì nào? 💡</p>
 
-        <div className="mt-9 grid grid-cols-2 gap-4">
+        <div className="mt-8 grid grid-cols-2 gap-4">
           {visibleLessons.map((lesson, index) => (
             <motion.button
               key={lesson.title}
@@ -64,10 +64,11 @@ export const LessonSelectPage: React.FC = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: index * 0.05 }}
               onClick={() => startLesson(lesson.activity, lesson.operation, lesson.title)}
-              className={`${lesson.color} lesson-tile`}
+              className={`${lesson.color} lesson-tile min-h-[154px] gap-3 p-4 text-center`}
             >
-              <span className="lesson-icon">{lesson.icon}</span>
-              <strong>{lesson.title}</strong>
+              <span className="lesson-icon h-14 w-14 text-3xl">{lesson.icon}</span>
+              <strong className="text-lg leading-tight">{lesson.title}</strong>
+              <span className="text-xs font-extrabold leading-tight text-gray-600/80">{lesson.hint}</span>
             </motion.button>
           ))}
         </div>

@@ -22,6 +22,14 @@ type LessonChoice = {
   title: string;
 };
 
+type AnswerRecord = {
+  questionTitle: string;
+  questionText: string;
+  target: number;
+  selected: number;
+  correct: boolean;
+};
+
 const readTotalQuestions = () => {
   const saved = localStorage.getItem('numsenseParentSettings');
   if (!saved) return 4;
@@ -79,12 +87,14 @@ const DraggableItem: React.FC<{
   dropped: boolean;
   item: string;
   label: string;
+  onQuickAdd: (id: string) => void;
 }> = ({
   id,
   position,
   dropped,
   item,
   label,
+  onQuickAdd,
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id,
@@ -97,9 +107,10 @@ const DraggableItem: React.FC<{
       ref={setNodeRef}
       type="button"
       style={{ left: position.left, top: position.top, transform: `translate(-50%, -50%) ${dragTransform || ''}` }}
-      className={`absolute z-20 text-5xl touch-none select-none transition ${
-        dropped ? 'opacity-20 scale-75' : 'cursor-grab active:cursor-grabbing'
-      } ${isDragging ? 'opacity-80 scale-110' : ''}`}
+      onClick={() => onQuickAdd(id)}
+      className={`absolute z-20 grid h-14 w-14 touch-none select-none place-items-center rounded-full bg-white/95 text-4xl shadow-md ring-2 ring-white/80 transition ${
+        dropped ? 'pointer-events-none opacity-0 scale-75' : 'cursor-grab active:cursor-grabbing active:scale-95'
+      } ${isDragging ? 'opacity-90 scale-110 shadow-xl ring-[#71C9EE]' : ''}`}
       aria-label={label}
       {...listeners}
       {...attributes}
@@ -120,17 +131,17 @@ const BasketDropZone: React.FC<{ count: number; target: number; item: string; ba
   return (
     <div
       ref={setNodeRef}
-      className={`absolute bottom-0 left-1/2 z-10 h-32 w-40 -translate-x-1/2 rounded-[24px] border-2 border-dashed bg-white/55 transition ${
-        isOver ? 'scale-105 border-[#71C9EE] bg-[#E4F8FF]' : 'border-gray-300'
+      className={`absolute bottom-0 left-1/2 z-10 h-36 w-44 -translate-x-1/2 rounded-[24px] border-2 border-dashed bg-white/80 shadow-sm transition ${
+        isOver ? 'scale-105 border-[#71C9EE] bg-[#E4F8FF] shadow-lg' : 'border-gray-300'
       }`}
     >
-      <div className="absolute inset-x-0 top-2 flex flex-wrap justify-center gap-0 px-3 text-3xl leading-none">
+      <div className="absolute inset-x-0 top-2 flex max-h-20 flex-wrap justify-center overflow-hidden px-3 text-3xl leading-none">
         {Array.from({ length: count }, (_, index) => (
           <span key={index}>{item}</span>
         ))}
       </div>
-      <div className="absolute inset-x-0 bottom-0 text-center text-7xl leading-none">{basket}</div>
-      <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm font-extrabold text-gray-500 shadow-sm">
+      <div className="absolute inset-x-0 bottom-1 text-center text-7xl leading-none">{basket}</div>
+      <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 rounded-full bg-white px-4 py-1 text-sm font-extrabold text-gray-500 shadow-sm">
         {count}/{target}
       </div>
     </div>
@@ -189,6 +200,8 @@ export const LessonPage: React.FC = () => {
   const [lessonChoice] = useState(readStoredLesson);
   const [droppedAppleIds, setDroppedAppleIds] = useState<string[]>([]);
   const [results, setResults] = useState<boolean[]>([]);
+  const [answerHistory, setAnswerHistory] = useState<AnswerRecord[]>([]);
+  const [reviewIndex, setReviewIndex] = useState<number | null>(null);
   const [totalQuestions] = useState(readTotalQuestions);
   const [modal, setModal] = useState<'correct' | 'wrong' | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -251,16 +264,31 @@ export const LessonPage: React.FC = () => {
     setDroppedAppleIds((current) => (current.includes(appleId) ? current : [...current, appleId]));
   };
 
+  const addItemToBasket = (itemId: string) => {
+    setDroppedAppleIds((current) => (current.includes(itemId) ? current : [...current, itemId]));
+  };
+
   const confirmAnswer = async () => {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
     const isCorrect = selectedApples === targetCount;
     const nextResults = [...results, isCorrect];
+    const nextHistory = [
+      ...answerHistory,
+      {
+        questionTitle: questionCopy.title,
+        questionText: questionCopy.text,
+        target: targetCount,
+        selected: selectedApples,
+        correct: isCorrect,
+      },
+    ];
     const responseTime = Date.now() - startTimeRef.current;
 
     await lesson.submitAnswer(selectedApples, responseTime);
     setResults(nextResults);
+    setAnswerHistory(nextHistory);
     setModal(isCorrect ? 'correct' : 'wrong');
     setIsSubmitting(false);
   };
@@ -280,6 +308,7 @@ export const LessonPage: React.FC = () => {
     }
 
     setModal(null);
+    await lesson.generateNewQuestion();
   };
 
   const resetCurrent = () => setDroppedAppleIds([]);
@@ -304,7 +333,7 @@ export const LessonPage: React.FC = () => {
             <div className="text-5xl">🧺</div>
           </div>
 
-          <div className="mt-6 flex items-center justify-between gap-3 rounded-[16px] px-4 py-4" style={{ backgroundColor: theme.bg }}>
+          <div className="mt-6 flex items-center justify-between gap-3 rounded-[16px] px-4 py-4 shadow-sm" style={{ backgroundColor: theme.bg }}>
             <div className="min-w-0">
               <div className="text-2xl font-extrabold">{questionCopy.title}</div>
               <p className="mt-1 text-sm font-extrabold text-gray-500 leading-snug">{questionCopy.text}</p>
@@ -312,8 +341,11 @@ export const LessonPage: React.FC = () => {
             <span className="shrink-0 text-4xl">{theme.basket}</span>
           </div>
 
-          <div className="relative mx-auto mt-2 h-[340px] w-full max-w-[360px]">
-            <div className="absolute left-1/2 top-10 z-0 -translate-x-1/2 text-[clamp(150px,48vw,210px)] leading-none opacity-95">{theme.scene}</div>
+          <div className="relative mx-auto mt-3 h-[340px] w-full max-w-[360px] rounded-[22px] bg-white/45">
+            <div className="absolute left-1/2 top-10 z-0 -translate-x-1/2 text-[clamp(150px,48vw,210px)] leading-none opacity-90">{theme.scene}</div>
+            <div className="absolute left-4 top-4 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold text-gray-500 shadow-sm">
+              Chạm hoặc kéo
+            </div>
             {Array.from({ length: availableItems }, (_, index) => {
               const appleId = `item-${index}`;
               return (
@@ -324,6 +356,7 @@ export const LessonPage: React.FC = () => {
                   dropped={droppedAppleIds.includes(appleId)}
                   item={theme.item}
                   label={`Kéo ${theme.itemName} vào ${theme.basketName}`}
+                  onQuickAdd={addItemToBasket}
                 />
               );
             })}
@@ -331,20 +364,23 @@ export const LessonPage: React.FC = () => {
           </div>
 
           <div className="grid grid-cols-2 gap-4 mt-7">
-            <button className="outline-pill" onClick={resetCurrent}>
-              ↩ Đặt lại
+            <button className="outline-pill" onClick={resetCurrent} disabled={isSubmitting}>
+              Đặt lại
             </button>
             <button className="primary-pill" onClick={confirmAnswer} disabled={isSubmitting}>
-              ✅ Xác nhận
+              {isSubmitting ? 'Đang lưu...' : 'Xác nhận'}
             </button>
           </div>
 
-          <div className="soft-card mt-6 p-4 flex justify-around">
+          <div className="soft-card mt-6 flex justify-around p-4">
             {Array.from({ length: totalQuestions }, (_, index) => {
               const result = results[index];
               return (
-                <div
+                <button
+                  type="button"
                   key={index}
+                  onClick={() => (answerHistory[index] ? setReviewIndex(index) : undefined)}
+                  disabled={!answerHistory[index]}
                   className={`grid h-11 w-11 place-items-center rounded-full font-extrabold ${
                     result === true
                       ? 'bg-[#9DE8D0] text-white'
@@ -354,7 +390,7 @@ export const LessonPage: React.FC = () => {
                   }`}
                 >
                   {result === true ? '✓' : result === false ? '×' : index + 1}
-                </div>
+                </button>
               );
             })}
           </div>
@@ -374,6 +410,27 @@ export const LessonPage: React.FC = () => {
                 onClick={continueLesson}
               >
                 {results.length >= totalQuestions ? 'Xem kết quả' : modal === 'correct' ? 'Tiếp theo' : 'Tiếp tục'}
+              </button>
+            </motion.div>
+          </div>
+        )}
+
+        {reviewIndex !== null && answerHistory[reviewIndex] && (
+          <div className="fixed inset-0 z-50 grid place-items-center bg-black/55 px-8">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full max-w-xs rounded-[24px] bg-white p-7 text-center shadow-xl"
+            >
+              <div className="text-6xl mb-3">{answerHistory[reviewIndex].correct ? '✅' : '❌'}</div>
+              <h2 className="text-xl font-extrabold">Câu {reviewIndex + 1}</h2>
+              <p className="mt-2 text-lg font-extrabold">{answerHistory[reviewIndex].questionTitle}</p>
+              <p className="mt-1 text-sm font-bold text-gray-500">{answerHistory[reviewIndex].questionText}</p>
+              <div className="mt-5 rounded-[16px] bg-[#F6FCFD] p-4 font-extrabold">
+                Bé chọn {answerHistory[reviewIndex].selected}, đáp án đúng là {answerHistory[reviewIndex].target}
+              </div>
+              <button className="primary-pill mt-6 w-full" onClick={() => setReviewIndex(null)}>
+                Đóng
               </button>
             </motion.div>
           </div>
