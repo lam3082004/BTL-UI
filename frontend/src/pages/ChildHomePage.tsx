@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Child } from '../types';
 import { getChildVisual, getStoredChild } from '../utils/childVisuals';
+import { sounds } from '../utils/soundEffects';
 
 export const ChildHomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -25,7 +26,7 @@ export const ChildHomePage: React.FC = () => {
   return (
     <main className="app-screen px-8 py-10">
       <div className="screen-top">
-        <button className="circle-button" onClick={() => navigate('/child-select')} aria-label="Quay lại">
+        <button className="circle-button" onClick={() => { sounds.playClick(); navigate('/child-select'); }} aria-label="Quay lại">
           ←
         </button>
         <div className="kid-chip">
@@ -44,7 +45,7 @@ export const ChildHomePage: React.FC = () => {
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.1 }}
-          onClick={() => navigate(`/child/${childId || child.id}/lessons`)}
+          onClick={() => { sounds.playClick(); navigate(`/child/${childId || child.id}/lessons`); }}
           className="mt-9 w-full rounded-[24px] bg-gradient-to-r from-[#71C9EE] to-[#9DE8D0] shadow-soft p-9 text-white active:scale-95 transition"
         >
           <div className="text-5xl mb-4">📖 ✏️</div>
@@ -68,11 +69,22 @@ export const ChildHomePage: React.FC = () => {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.18 }}
-          onClick={() => navigate(`/child/${child.id}/treasure`)}
+          onClick={() => { sounds.playClick(); navigate(`/child/${child.id}/treasure`); }}
           className="soft-card mt-8 w-full p-6 active:scale-95 transition"
         >
           <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-[18px] bg-[#FFD39A] text-4xl">🏛️</div>
           <strong className="text-xl text-gray-600">Rương kho báu ✨</strong>
+        </motion.button>
+
+        <motion.button
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          onClick={() => { sounds.playClick(); navigate(`/child/${child.id}/challenges`); }}
+          className="mt-6 w-full rounded-[24px] bg-gradient-to-r from-[#FF9A9E] to-[#FECFEF] shadow-soft p-6 text-white active:scale-95 transition"
+        >
+          <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-full bg-white/30 text-4xl shadow-sm backdrop-blur-sm">🎮</div>
+          <strong className="text-xl font-extrabold">THỬ THÁCH</strong>
         </motion.button>
       </section>
     </main>

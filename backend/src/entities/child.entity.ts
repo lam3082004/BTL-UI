@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, On
 import { Parent } from './parent.entity';
 import { LessonSession } from './lesson-session.entity';
 
+// Kept for backward compatibility if needed elsewhere, but allowedOperations will be strings
 export enum MathOperation {
   COUNTING = 'COUNTING',
   ADDITION = 'ADDITION',
@@ -34,8 +35,8 @@ export class Child {
   @Column({ type: 'int', default: 10 })
   maxNumber: number;
 
-  @Column('enum', { enum: MathOperation, array: true, default: [MathOperation.ADDITION] })
-  allowedOperations: MathOperation[];
+  @Column('text', { array: true, default: ['ADDITION'] })
+  allowedOperations: string[];
 
   @Column({ type: 'int', default: 1 })
   configVersion: number;

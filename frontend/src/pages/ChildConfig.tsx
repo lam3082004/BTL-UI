@@ -15,9 +15,12 @@ import {
 const operations = [
   { value: LessonActivity.COUNTING, label: 'Học đếm', icon: '🍎' },
   { value: MathOperation.ADDITION, label: 'Cộng', icon: '+' },
-  { value: MathOperation.SUBTRACTION, label: 'Trừ', icon: '−' },
+  { value: MathOperation.SUBTRACTION, label: 'Trừ', icon: '🎈' },
   { value: MathOperation.MULTIPLICATION, label: 'Nhân', icon: '×' },
-  { value: MathOperation.DIVISION, label: 'Chia', icon: '÷' },
+  { value: MathOperation.DIVISION, label: 'Chia', icon: '🍬' },
+  { value: LessonActivity.FRACTIONS, label: 'Phân số', icon: '🍕' },
+  { value: LessonActivity.TIME, label: 'Xem giờ', icon: '⏰' },
+  { value: LessonActivity.MEASUREMENT, label: 'Đo lường', icon: '📏' },
 ];
 
 export const ChildConfig: React.FC = () => {
@@ -90,12 +93,31 @@ export const ChildConfig: React.FC = () => {
         await client.put(`/children/${childId}/config`, backendPayload);
       }
       if (child) {
-        upsertLocalChild({ ...child, ...localPayload });
+        const updatedChild = { ...child, ...localPayload };
+        upsertLocalChild(updatedChild);
+        
+        // Cập nhật sessionStorage nếu đây là bé đang hoạt động để bài học cập nhật ngay lập tức
+        const currentActiveStr = sessionStorage.getItem('selectedChild');
+        if (currentActiveStr) {
+          const currentActive = JSON.parse(currentActiveStr) as Child;
+          if (currentActive.id === childId) {
+            sessionStorage.setItem('selectedChild', JSON.stringify(updatedChild));
+          }
+        }
       }
       navigate('/parent-dashboard');
     } catch (err) {
       if (child) {
-        upsertLocalChild({ ...child, minNumber: safeMin, maxNumber: safeMax, allowedOperations: enabledLessons });
+        const updatedChild = { ...child, minNumber: safeMin, maxNumber: safeMax, allowedOperations: enabledLessons };
+        upsertLocalChild(updatedChild);
+        
+        const currentActiveStr = sessionStorage.getItem('selectedChild');
+        if (currentActiveStr) {
+          const currentActive = JSON.parse(currentActiveStr) as Child;
+          if (currentActive.id === childId) {
+            sessionStorage.setItem('selectedChild', JSON.stringify(updatedChild));
+          }
+        }
         navigate('/parent-dashboard');
       }
       console.error(err);
@@ -132,8 +154,26 @@ export const ChildConfig: React.FC = () => {
       <section className="soft-card mt-10 p-7">
         <h2 className="text-2xl font-extrabold mb-8">🔢 Phạm vi số</h2>
         {[
-          { label: 'Số nhỏ nhất', value: minNumber, setter: setMinNumber, color: '#9DD9E8' },
-          { label: 'Số lớn nhất', value: maxNumber, setter: setMaxNumber, color: '#FFD39A' },
+          {
+            label: 'Số nhỏ nhất',
+            value: minNumber,
+            setter: (val: number) => {
+              const newMin = Math.max(1, Math.min(maxVisualNumber, val));
+              setMinNumber(newMin);
+              if (newMin > maxNumber) setMaxNumber(newMin);
+            },
+            color: '#9DD9E8',
+          },
+          {
+            label: 'Số lớn nhất',
+            value: maxNumber,
+            setter: (val: number) => {
+              const newMax = Math.max(1, Math.min(maxVisualNumber, val));
+              setMaxNumber(newMax);
+              if (newMax < minNumber) setMinNumber(newMax);
+            },
+            color: '#FFD39A',
+          },
         ].map((item) => (
           <div key={item.label} className="mb-9">
             <div className="mb-5 flex items-center justify-between">
@@ -146,7 +186,7 @@ export const ChildConfig: React.FC = () => {
               <button
                 type="button"
                 className="circle-button h-12 w-12 text-2xl"
-                onClick={() => item.setter(Math.max(1, item.value - 1))}
+                onClick={() => item.setter(item.value - 1)}
                 aria-label={`Giảm ${item.label.toLowerCase()}`}
               >
                 −
@@ -162,7 +202,7 @@ export const ChildConfig: React.FC = () => {
               <button
                 type="button"
                 className="circle-button h-12 w-12 text-2xl"
-                onClick={() => item.setter(Math.min(maxVisualNumber, item.value + 1))}
+                onClick={() => item.setter(item.value + 1)}
                 aria-label={`Tăng ${item.label.toLowerCase()}`}
               >
                 +

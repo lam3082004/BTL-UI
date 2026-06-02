@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import client from '../api/client';
@@ -52,6 +52,7 @@ export const ParentSettings: React.FC = () => {
   const { token, logout } = useAuth();
   const [settings, setSettings] = useState(readSettings);
   const [parent, setParent] = useState<Parent | null>(() => decodeParentFromToken(localStorage.getItem('jwtToken')));
+  const syncTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     localStorage.setItem(settingsKey, JSON.stringify(settings));
@@ -65,7 +66,15 @@ export const ParentSettings: React.FC = () => {
 
     client
       .get('/auth/profile')
-      .then((response) => setParent(response.data))
+      .then((response) => {
+        setParent(response.data);
+        const backendSettings = {
+          soundEnabled: response.data.soundEnabled ?? true,
+          animationsEnabled: response.data.animationsEnabled ?? true,
+          questionsPerLesson: response.data.questionsPerLesson ?? 4,
+        };
+        setSettings(backendSettings);
+      })
       .catch(() => setParent(decodeParentFromToken(localStorage.getItem('jwtToken'))));
   }, [token]);
 
@@ -76,7 +85,24 @@ export const ParentSettings: React.FC = () => {
   };
 
   const updateSetting = <T extends keyof ParentSettingsState>(key: T, value: ParentSettingsState[T]) => {
-    setSettings((current) => ({ ...current, [key]: value }));
+    setSettings((current) => {
+      const next = { ...current, [key]: value };
+
+      if (token) {
+        if (syncTimeoutRef.current) {
+          window.clearTimeout(syncTimeoutRef.current);
+        }
+        syncTimeoutRef.current = window.setTimeout(async () => {
+          try {
+            await client.put('/auth/settings', next);
+          } catch (err) {
+            console.error('Failed to sync settings to backend:', err);
+          }
+        }, 300);
+      }
+
+      return next;
+    });
   };
 
   return (

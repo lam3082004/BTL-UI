@@ -46,7 +46,7 @@ services:
       - numsense_network
     volumes:
       - ./backend/src:/app/src
-    command: npm run start:dev
+    command: node dist/main
 
   frontend:
     build:

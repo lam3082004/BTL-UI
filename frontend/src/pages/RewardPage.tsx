@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import client from '../api/client';
 import { getStoredChild } from '../utils/childVisuals';
+import { BadgeUnlockedModal } from '../components/BadgeUnlockedModal';
 
 interface SessionStats {
   totalQuestions: number;
@@ -19,8 +20,10 @@ export const RewardPage: React.FC = () => {
     childName?: string;
     lessonTitle?: string;
     results?: boolean[];
+    newBadgeIds?: string[];
   } | null;
   const [stats, setStats] = useState<SessionStats | null>(null);
+  const [earnedBadges, setEarnedBadges] = useState<string[]>(state?.newBadgeIds || []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -51,6 +54,19 @@ export const RewardPage: React.FC = () => {
   const visibleStats = stats || fallbackStats;
   const childName = state?.childName || child?.name || 'bé';
   const lessonTitle = state?.lessonTitle || 'Học Đếm';
+
+  const handleReplay = () => {
+    const routeMap: Record<string, string> = {
+      'Phép Trừ': 'subtraction',
+      'Phép Nhân': 'multiplication',
+      'Phép Chia': 'division',
+      'Phân Số': 'fractions',
+      'Xem Giờ': 'clock',
+      'Đo Lường': 'measurement'
+    };
+    const route = routeMap[lessonTitle] || 'lesson';
+    navigate(`/child/${child?.id || ''}/${route}`);
+  };
 
   return (
     <main className="app-screen px-8 py-16 flex flex-col items-center text-center">
@@ -83,12 +99,13 @@ export const RewardPage: React.FC = () => {
         </div>
       </section>
 
-      <button className="primary-pill mt-10 w-full" onClick={() => navigate(`/child/${child?.id || ''}/lesson`)}>
+      <button className="primary-pill mt-10 w-full" onClick={handleReplay}>
         ↩ Chơi lại từ đầu
       </button>
       <button className="outline-pill mt-5 w-full" onClick={() => navigate(child ? `/child/${child.id}/lessons` : '/child-select')}>
         🏠 Về chọn bài học
       </button>
+      <BadgeUnlockedModal badgeIds={earnedBadges} onClose={() => setEarnedBadges([])} />
     </main>
   );
 };

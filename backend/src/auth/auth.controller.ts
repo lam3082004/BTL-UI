@@ -1,4 +1,4 @@
-import { Controller, Get, UseGuards, Req, Res } from '@nestjs/common';
+import { Controller, Get, Put, Body, UseGuards, Req, Res } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
@@ -34,7 +34,15 @@ export class AuthController {
   @Get('profile')
   @UseGuards(JwtAuthGuard)
   getProfile(@Req() req: any) {
-    const { id, email, name, googleId, avatarUrl, createdAt } = req.user;
-    return { id, email, name, googleId, avatarUrl, createdAt };
+    const { id, email, name, googleId, avatarUrl, createdAt, soundEnabled, animationsEnabled, questionsPerLesson } = req.user;
+    return { id, email, name, googleId, avatarUrl, createdAt, soundEnabled, animationsEnabled, questionsPerLesson };
+  }
+
+  @Put('settings')
+  @UseGuards(JwtAuthGuard)
+  async updateSettings(@Req() req: any, @Body() body: { soundEnabled?: boolean; animationsEnabled?: boolean; questionsPerLesson?: number }) {
+    const parent = await this.authService.updateSettings(req.user.id, body);
+    const { id, email, name, googleId, avatarUrl, createdAt, soundEnabled, animationsEnabled, questionsPerLesson } = parent;
+    return { id, email, name, googleId, avatarUrl, createdAt, soundEnabled, animationsEnabled, questionsPerLesson };
   }
 }

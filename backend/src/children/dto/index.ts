@@ -21,8 +21,8 @@ export class CreateChildDto {
 
   @IsOptional()
   @IsArray()
-  @IsEnum(MathOperation, { each: true })
-  allowedOperations?: MathOperation[];
+  @IsString({ each: true })
+  allowedOperations?: string[];
 }
 
 export class UpdateChildConfigDto {
@@ -38,6 +38,6 @@ export class UpdateChildConfigDto {
 
   @IsOptional()
   @IsArray()
-  @IsEnum(MathOperation, { each: true })
-  allowedOperations?: MathOperation[];
+  @IsString({ each: true })
+  allowedOperations?: string[];
 }

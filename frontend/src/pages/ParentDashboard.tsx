@@ -5,6 +5,7 @@ import client from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { Child, Parent } from '../types';
 import { getChildVisual, getLocalChildren, normalizeChildConfig, setLocalChildren } from '../utils/childVisuals';
+import { AddChildModal } from '../components/AddChildModal';
 
 export const ParentDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export const ParentDashboard: React.FC = () => {
   const [parent, setParent] = useState<Parent | null>(null);
   const [expandedChild, setExpandedChild] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
 
   useEffect(() => {
     if (!token) {
@@ -36,17 +38,8 @@ export const ParentDashboard: React.FC = () => {
   };
 
   const fetchDemoChildren = async () => {
-    try {
-      const response = await client.get('/children/demo');
-      const normalizedChildren = response.data.map(normalizeChildConfig);
-      setChildren(normalizedChildren);
-      setLocalChildren(normalizedChildren);
-    } catch (err) {
-      console.error('Failed to fetch demo children:', err);
-      setChildren(getLocalChildren());
-    } finally {
-      setIsLoading(false);
-    }
+    setChildren(getLocalChildren());
+    setIsLoading(false);
   };
 
   const fetchDashboardData = async () => {
@@ -56,12 +49,12 @@ export const ParentDashboard: React.FC = () => {
       const [profileResponse, childrenResponse] = await Promise.all([profileRequest, childrenRequest]);
 
       setParent(profileResponse?.data || buildProfileFromToken(localStorage.getItem('jwtToken')));
-      const sourceChildren = childrenResponse.data?.length
-        ? childrenResponse.data
-        : (await client.get('/children/demo')).data;
-      const normalizedChildren = sourceChildren.map(normalizeChildConfig);
-      setChildren(normalizedChildren);
-      setLocalChildren(normalizedChildren);
+      if (childrenResponse.data) {
+        const sourceChildren = childrenResponse.data;
+        const normalizedChildren = sourceChildren.map(normalizeChildConfig);
+        setChildren(normalizedChildren);
+        setLocalChildren(normalizedChildren);
+      }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
       setChildren(getLocalChildren());
@@ -75,6 +68,23 @@ export const ParentDashboard: React.FC = () => {
     window.location.href = `${apiBaseUrl}/auth/google`;
   };
 
+  const handleDeleteChild = async (childId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa hồ sơ này?')) return;
+    try {
+      if (token) {
+        await client.delete(`/children/${childId}`);
+        fetchDashboardData();
+      } else {
+        const currentChildren = getLocalChildren().filter((c) => c.id !== childId);
+        setLocalChildren(currentChildren);
+        setChildren(currentChildren);
+      }
+    } catch (err) {
+      console.error('Failed to delete child:', err);
+      alert('Không thể xóa. Vui lòng thử lại.');
+    }
+  };
+
   if (isLoading) {
     return (
       <main className="app-screen grid place-items-center">
@@ -84,8 +94,8 @@ export const ParentDashboard: React.FC = () => {
   }
 
   return (
-    <main className="app-screen px-6 py-8">
-      <div className="screen-top items-center">
+    <main className="app-screen flex flex-col h-[100dvh] overflow-hidden px-6 py-8">
+      <div className="screen-top shrink-0 items-center">
         <button className="circle-button" onClick={() => navigate('/')} aria-label="Quay lại">
           ←
         </button>
@@ -102,73 +112,94 @@ export const ParentDashboard: React.FC = () => {
         </button>
       </div>
 
-      {!token && (
-        <section className="soft-card mt-7 p-5">
-          <div className="flex items-start gap-4">
-            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#FFF3DF] text-3xl">G</span>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-xl font-extrabold">Đăng nhập Google</h2>
-              <p className="mt-1 text-sm font-bold leading-snug text-gray-500">
-                Dùng lần đầu để đăng ký tài khoản, lần sau chỉ cần truy cập bảng điều khiển.
-              </p>
-            </div>
-          </div>
-          <button className="primary-pill mt-5 w-full" onClick={handleGoogleLogin}>
-            Đăng nhập Google / đăng ký
-          </button>
-        </section>
-      )}
-
-      <section className="mt-9">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-2xl font-extrabold">DANH SÁCH TRẺ</h2>
-        </div>
-
-        <div className="soft-card p-4">
-          {!children.length && (
-            <div className="py-8 text-center">
-              <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#E4F8FF] text-4xl">👶</div>
-              <h3 className="mt-4 text-xl font-extrabold">Chưa có hồ sơ trẻ</h3>
-              <p className="mt-2 text-sm font-bold text-gray-400">Phần thêm/bớt hồ sơ có thể bổ sung sau.</p>
-            </div>
+      <div className="flex-grow flex flex-col min-h-0 mt-6 justify-between gap-6">
+        <div className="shrink-0 flex flex-col gap-6">
+          {!token && (
+            <section className="soft-card p-5">
+              <div className="flex items-start gap-4">
+                <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#FFF3DF] text-3xl">G</span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="text-xl font-extrabold">Đăng nhập Google</h2>
+                  <p className="mt-1 text-sm font-bold leading-snug text-gray-500">
+                    Dùng lần đầu để đăng ký tài khoản, lần sau chỉ cần truy cập bảng điều khiển.
+                  </p>
+                </div>
+              </div>
+              <button className="primary-pill mt-5 w-full" onClick={handleGoogleLogin}>
+                Đăng nhập Google / đăng ký
+              </button>
+            </section>
           )}
 
-          {children.map((child, index) => {
-            const visual = getChildVisual(child, index);
-            const expanded = expandedChild === child.id;
-            return (
-              <div key={child.id} className={index > 0 ? 'border-t border-gray-100 pt-4 mt-4' : ''}>
-                <div className="grid grid-cols-[52px_1fr] items-center gap-3">
-                  <div className="grid h-[52px] w-[52px] place-items-center rounded-full text-3xl shadow-sm" style={{ backgroundColor: visual.color }}>
-                    {visual.avatar}
-                  </div>
-                  <button
-                    onClick={() => setExpandedChild(expanded ? null : child.id)}
-                    className={`flex min-h-[56px] min-w-0 items-center justify-between rounded-[18px] border-2 px-4 text-left font-extrabold transition ${
-                      expanded ? 'border-[#FFD39A]' : 'border-gray-200'
-                    }`}
-                  >
-                    <span className="truncate">{child.name}</span>
-                    <span className="ml-3 shrink-0">{expanded ? '⌃' : '⌄'}</span>
-                  </button>
-                </div>
-
-                {expanded && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 grid grid-cols-2 gap-3 pl-[64px]">
-                    <button className="rounded-[16px] bg-[#9DD9E8] px-4 py-4 text-white font-extrabold" onClick={() => navigate(`/progress-report/${child.id}`)}>
-                      📊 Báo cáo
-                    </button>
-                    <button className="rounded-[16px] bg-[#FFD39A] px-4 py-4 text-white font-extrabold" onClick={() => navigate(`/child-config/${child.id}`)}>
-                      ⚙ Cấu hình
-                    </button>
-                  </motion.div>
-                )}
-              </div>
-            );
-          })}
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-extrabold">DANH SÁCH TRẺ</h2>
+            <button
+              className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#9DE8D0] text-3xl text-white shadow-sm"
+              onClick={() => setShowAddModal(true)}
+              aria-label="Thêm trẻ"
+            >
+              +
+            </button>
+          </div>
         </div>
+        {/* This white card container is fixed, but its inner list scrolls */}
+        <div className="flex-grow flex flex-col min-h-0 soft-card p-4">
+          <div className="flex-grow overflow-y-auto min-h-0 pr-1">
+            {!children.length && (
+              <div className="py-8 text-center">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-[#E4F8FF] text-4xl">👶</div>
+                <h3 className="mt-4 text-xl font-extrabold">Chưa có hồ sơ trẻ</h3>
+                <p className="mt-2 text-sm font-bold text-gray-400">Phần thêm/bớt hồ sơ có thể bổ sung sau.</p>
+              </div>
+            )}
 
-        <div className="mt-8 grid grid-cols-3 gap-4">
+            {children.map((child, index) => {
+              const visual = getChildVisual(child, index);
+              const expanded = expandedChild === child.id;
+              return (
+                <div key={child.id} className={index > 0 ? 'border-t border-gray-100 pt-4 mt-4' : ''}>
+                  <div className="flex items-center gap-3">
+                    <div className="grid h-[52px] w-[52px] shrink-0 place-items-center rounded-full text-3xl shadow-sm" style={{ backgroundColor: visual.color }}>
+                      {visual.avatar}
+                    </div>
+                    <button
+                      onClick={() => setExpandedChild(expanded ? null : child.id)}
+                      className={`flex min-h-[56px] min-w-0 flex-1 items-center justify-between rounded-[18px] border-2 px-4 text-left font-extrabold transition ${
+                        expanded ? 'border-[#FFD39A]' : 'border-gray-200'
+                      }`}
+                    >
+                      <span className="truncate">{child.name}</span>
+                      <span className="ml-3 shrink-0">{expanded ? '⌃' : '⌄'}</span>
+                    </button>
+                    <button
+                      onClick={() => handleDeleteChild(child.id)}
+                      className="grid h-[56px] w-[40px] shrink-0 place-items-center rounded-[18px] text-[#FF7A7A] transition hover:bg-[#FFF0F0]"
+                      aria-label="Xóa trẻ"
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                    </button>
+                  </div>
+
+                  {expanded && (
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 grid grid-cols-2 gap-3 pl-[64px]">
+                      <button className="rounded-[16px] bg-[#9DD9E8] px-4 py-4 text-white font-extrabold" onClick={() => navigate(`/progress-report/${child.id}`)}>
+                        📊 Báo cáo
+                      </button>
+                      <button className="rounded-[16px] bg-[#FFD39A] px-4 py-4 text-white font-extrabold" onClick={() => navigate(`/child-config/${child.id}`)}>
+                        ⚙ Cấu hình
+                      </button>
+                    </motion.div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* Bottom widgets fixed */}
+        <div className="shrink-0 grid grid-cols-3 gap-4">
           {[
             { icon: '👶', value: children.length, label: 'Tổng trẻ', color: 'bg-[#E4F8FF]' },
             { icon: '📚', value: Math.max(0, children.length - 1), label: 'Đang học', color: 'bg-[#ECF8ED]' },
@@ -181,7 +212,19 @@ export const ParentDashboard: React.FC = () => {
             </div>
           ))}
         </div>
-      </section>
+      </div>
+
+      <AddChildModal
+        open={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onChildAdded={() => {
+          if (token) {
+            fetchDashboardData();
+          } else {
+            setChildren(getLocalChildren());
+          }
+        }}
+      />
     </main>
   );
 };

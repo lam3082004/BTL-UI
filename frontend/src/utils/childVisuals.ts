@@ -31,13 +31,30 @@ export const getChildVisual = (child?: Pick<Child, 'name' | 'avatar'> | null, in
 
 export const getStoredChild = (): Child | null => {
   const value = sessionStorage.getItem('selectedChild');
-  if (!value) return null;
-
-  try {
-    return normalizeChildConfig(JSON.parse(value) as Child);
-  } catch {
-    return null;
+  if (value) {
+    try {
+      return normalizeChildConfig(JSON.parse(value) as Child);
+    } catch {
+      // ignore and try fallback
+    }
   }
+
+  if (typeof window !== 'undefined') {
+    const match = window.location.pathname.match(/\/child\/([^/]+)/) || 
+                  window.location.pathname.match(/\/progress-report\/([^/]+)/) || 
+                  window.location.pathname.match(/\/child-config\/([^/]+)/);
+    const childId = match ? match[1] : sessionStorage.getItem('selectedChildId');
+    if (childId) {
+      const child = getLocalChildById(childId);
+      if (child) {
+        sessionStorage.setItem('selectedChild', JSON.stringify(child));
+        sessionStorage.setItem('selectedChildId', child.id);
+        return child;
+      }
+    }
+  }
+
+  return null;
 };
 
 export const demoChildren: Child[] = [
@@ -81,9 +98,8 @@ export const normalizeChildConfig = (child: Child): Child => {
   };
 };
 
-export const toBackendOperations = (enabledLessons: EnabledLesson[]): MathOperation[] => {
-  const operations = enabledLessons.filter(isMathOperation);
-  return operations.length ? operations : [MathOperation.ADDITION];
+export const toBackendOperations = (enabledLessons: EnabledLesson[]): string[] => {
+  return enabledLessons.length ? (enabledLessons as string[]) : [MathOperation.ADDITION];
 };
 
 export const getLocalChildren = (): Child[] => {

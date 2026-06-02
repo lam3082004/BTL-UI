@@ -18,6 +18,15 @@ export class Parent {
   @Column({ nullable: true })
   avatarUrl: string;
 
+  @Column({ type: 'boolean', default: true })
+  soundEnabled: boolean;
+
+  @Column({ type: 'boolean', default: true })
+  animationsEnabled: boolean;
+
+  @Column({ type: 'int', default: 4 })
+  questionsPerLesson: number;
+
   @CreateDateColumn()
   createdAt: Date;
 

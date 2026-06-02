@@ -8,6 +8,9 @@ export enum MathOperation {
 
 export enum LessonActivity {
   COUNTING = 'COUNTING',
+  FRACTIONS = 'FRACTIONS',
+  TIME = 'TIME',
+  MEASUREMENT = 'MEASUREMENT',
 }
 
 export type EnabledLesson = MathOperation | LessonActivity;

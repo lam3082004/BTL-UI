@@ -61,4 +61,24 @@ export class AuthService {
       where: { id: payload.sub },
     });
   }
+
+  async updateSettings(
+    parentId: string,
+    settings: { soundEnabled?: boolean; animationsEnabled?: boolean; questionsPerLesson?: number },
+  ): Promise<Parent> {
+    const parent = await this.parentRepository.findOne({ where: { id: parentId } });
+    if (!parent) {
+      throw new BadRequestException('Parent not found');
+    }
+    if (settings.soundEnabled !== undefined) {
+      parent.soundEnabled = settings.soundEnabled;
+    }
+    if (settings.animationsEnabled !== undefined) {
+      parent.animationsEnabled = settings.animationsEnabled;
+    }
+    if (settings.questionsPerLesson !== undefined) {
+      parent.questionsPerLesson = settings.questionsPerLesson;
+    }
+    return this.parentRepository.save(parent);
+  }
 }

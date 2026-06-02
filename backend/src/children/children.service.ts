@@ -44,7 +44,7 @@ export class ChildrenService implements OnModuleInit {
           parentId: savedParent.id,
           minNumber: 1,
           maxNumber: 10,
-          allowedOperations: [MathOperation.COUNTING, MathOperation.ADDITION],
+          allowedOperations: ['COUNTING', 'ADDITION'],
           configVersion: this.currentConfigVersion,
         },
         {
@@ -53,7 +53,7 @@ export class ChildrenService implements OnModuleInit {
           parentId: savedParent.id,
           minNumber: 1,
           maxNumber: 12,
-          allowedOperations: [MathOperation.COUNTING, MathOperation.ADDITION, MathOperation.SUBTRACTION],
+          allowedOperations: ['COUNTING', 'ADDITION', 'SUBTRACTION'],
           configVersion: this.currentConfigVersion,
         },
       ]),
@@ -75,7 +75,7 @@ export class ChildrenService implements OnModuleInit {
           ...child,
           ...numberConfig,
           allowedOperations: this.normalizeAllowedOperations([
-            MathOperation.COUNTING,
+            'COUNTING',
             ...(child.allowedOperations || []),
           ]),
           configVersion: this.currentConfigVersion,
@@ -84,12 +84,9 @@ export class ChildrenService implements OnModuleInit {
     );
   }
 
-  private normalizeAllowedOperations(allowedOperations?: MathOperation[]): MathOperation[] {
-    const values = Object.values(MathOperation);
-    const normalized = (allowedOperations || [MathOperation.COUNTING, MathOperation.ADDITION]).filter((operation) =>
-      values.includes(operation),
-    );
-    return normalized.length ? Array.from(new Set(normalized)) : [MathOperation.COUNTING, MathOperation.ADDITION];
+  private normalizeAllowedOperations(allowedOperations?: string[]): string[] {
+    const normalized = (allowedOperations || ['COUNTING', 'ADDITION']).filter(op => typeof op === 'string' && op.length > 0);
+    return normalized.length ? Array.from(new Set(normalized)) : ['COUNTING', 'ADDITION'];
   }
 
   private normalizeNumberConfig(minNumber?: number, maxNumber?: number) {

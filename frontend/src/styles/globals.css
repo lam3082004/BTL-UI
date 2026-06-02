@@ -184,3 +184,19 @@ body {
 input[type='range'] {
   accent-color: #9DD9E8;
 }
+
+/* Custom rounded scrollbar for clean kids UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #E2EFF1;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #71C9EE;
+}

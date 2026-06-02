@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   DndContext,
   DragEndEvent,
+  DragStartEvent,
+  Modifier,
   PointerSensor,
   pointerWithin,
   useDraggable,
@@ -14,7 +16,13 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useLesson } from '../hooks/useLesson';
 import { Child, EnabledLesson, LessonActivity, MathOperation } from '../types';
-import { getChildVisual, getStoredChild, maxVisualNumber } from '../utils/childVisuals';
+import { getChildVisual, getStoredChild, getLocalChildById, maxVisualNumber } from '../utils/childVisuals';
+import { sounds } from '../utils/soundEffects';
+import { SpeakButton } from '../components/SpeakButton';
+import { checkAndAwardLessonBadge } from '../utils/badges';
+import { LessonProgressBar } from '../components/LessonProgressBar';
+
+
 
 type LessonChoice = {
   activity: EnabledLesson;
@@ -43,18 +51,18 @@ const readTotalQuestions = () => {
 };
 
 const itemPositions = [
-  { left: '26%', top: '9%' },
-  { left: '48%', top: '2%' },
-  { left: '67%', top: '14%' },
-  { left: '16%', top: '24%' },
-  { left: '50%', top: '29%' },
-  { left: '73%', top: '35%' },
-  { left: '28%', top: '44%' },
-  { left: '61%', top: '53%' },
-  { left: '38%', top: '61%' },
-  { left: '76%', top: '61%' },
-  { left: '19%', top: '59%' },
-  { left: '69%', top: '4%' },
+  { left: '35%', top: '12%' },
+  { left: '55%', top: '8%' },
+  { left: '70%', top: '15%' },
+  { left: '25%', top: '25%' },
+  { left: '50%', top: '20%' },
+  { left: '75%', top: '28%' },
+  { left: '30%', top: '38%' },
+  { left: '60%', top: '35%' },
+  { left: '45%', top: '45%' },
+  { left: '70%', top: '42%' },
+  { left: '25%', top: '48%' },
+  { left: '55%', top: '50%' },
 ];
 
 const itemThemes = [
@@ -87,14 +95,12 @@ const DraggableItem: React.FC<{
   dropped: boolean;
   item: string;
   label: string;
-  onQuickAdd: (id: string) => void;
 }> = ({
   id,
   position,
   dropped,
   item,
   label,
-  onQuickAdd,
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id,
@@ -104,6 +110,7 @@ const DraggableItem: React.FC<{
 
   return (
     <button
+      id={id}
       ref={setNodeRef}
       type="button"
       style={{
@@ -112,16 +119,11 @@ const DraggableItem: React.FC<{
         transform: `translate(-50%, -50%) ${dragTransform || ''}`,
         touchAction: 'none',
       }}
-      onClick={(event) => {
-        if (isDragging) return;
-        event.stopPropagation();
-        onQuickAdd(id);
-      }}
-      className={`absolute z-20 grid h-12 w-12 select-none place-items-center rounded-full bg-white/95 text-3xl shadow-md ring-2 ring-white/80 sm:h-14 sm:w-14 sm:text-4xl ${
+      className={`absolute z-20 grid h-12 w-12 select-none place-items-center rounded-full bg-white/95 text-3xl sm:h-14 sm:w-14 sm:text-4xl ${
         isDragging ? '' : 'transition'
       } ${
         dropped ? 'pointer-events-none opacity-0 scale-75' : 'cursor-grab active:cursor-grabbing active:scale-95'
-      } ${isDragging ? 'opacity-90 scale-110 shadow-xl ring-[#71C9EE]' : ''}`}
+      } ${isDragging ? 'opacity-90 scale-110' : ''}`}
       aria-label={label}
       {...listeners}
       {...attributes}
@@ -131,9 +133,8 @@ const DraggableItem: React.FC<{
   );
 };
 
-const BasketDropZone: React.FC<{ count: number; target: number; item: string; basket: string }> = ({
+const BasketDropZone: React.FC<{ count: number; item: string; basket: string }> = ({
   count,
-  target,
   item,
   basket,
 }) => {
@@ -142,7 +143,7 @@ const BasketDropZone: React.FC<{ count: number; target: number; item: string; ba
   return (
     <div
       ref={setNodeRef}
-      className={`absolute bottom-0 left-1/2 z-10 h-32 w-40 -translate-x-1/2 rounded-[24px] border-2 border-dashed bg-white/80 shadow-sm transition ${
+      className={`mx-auto h-32 w-40 rounded-[24px] border-2 border-dashed bg-white/80 shadow-sm transition relative ${
         isOver ? 'scale-105 border-[#71C9EE] bg-[#E4F8FF] shadow-lg' : 'border-gray-300'
       }`}
     >
@@ -152,9 +153,6 @@ const BasketDropZone: React.FC<{ count: number; target: number; item: string; ba
         ))}
       </div>
       <div className="absolute inset-x-0 bottom-1 text-center text-6xl leading-none">{basket}</div>
-      <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 rounded-full bg-white px-4 py-1 text-sm font-extrabold text-gray-500 shadow-sm">
-        {count}/{target}
-      </div>
     </div>
   );
 };
@@ -220,15 +218,53 @@ export const LessonPage: React.FC = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
   );
+  const dragInitialRectRef = useRef<DOMRect | null>(null);
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const node = document.getElementById(String(event.active.id));
+    if (node) {
+      dragInitialRectRef.current = node.getBoundingClientRect();
+    }
+  };
+
+  const clampToBounds: Modifier = useCallback(({ transform }) => {
+    const container = document.getElementById('drag-bounds');
+    const nodeRect = dragInitialRectRef.current;
+    if (!nodeRect || !container) return transform;
+
+    const bounds = container.getBoundingClientRect();
+    const value = { ...transform };
+
+    if (nodeRect.top + transform.y < bounds.top) {
+      value.y = bounds.top - nodeRect.top;
+    } else if (nodeRect.bottom + transform.y > bounds.bottom) {
+      value.y = bounds.bottom - nodeRect.bottom;
+    }
+
+    if (nodeRect.left + transform.x < bounds.left) {
+      value.x = bounds.left - nodeRect.left;
+    } else if (nodeRect.right + transform.x > bounds.right) {
+      value.x = bounds.right - nodeRect.right;
+    }
+
+    return value;
+  }, []);
 
   useEffect(() => {
-    const child = getStoredChild();
+    let child = getStoredChild();
+    if (!child && childId) {
+      child = getLocalChildById(childId);
+      if (child) {
+        sessionStorage.setItem('selectedChild', JSON.stringify(child));
+        sessionStorage.setItem('selectedChildId', child.id);
+      }
+    }
     if (!child) {
       navigate('/child-select');
       return;
     }
     setSelectedChild(child);
-  }, [navigate]);
+  }, [childId, navigate]);
 
   const allowedOperations = useMemo(() => [lessonChoice.operation], [lessonChoice.operation]);
 
@@ -274,15 +310,16 @@ export const LessonPage: React.FC = () => {
     setDroppedAppleIds((current) => (current.includes(appleId) ? current : [...current, appleId]));
   };
 
-  const addItemToBasket = (itemId: string) => {
-    setDroppedAppleIds((current) => (current.includes(itemId) ? current : [...current, itemId]));
-  };
-
   const confirmAnswer = async () => {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
     const isCorrect = selectedApples === targetCount;
+    if (isCorrect) {
+      sounds.playSuccess();
+    } else {
+      sounds.playWrong();
+    }
     const nextResults = [...results, isCorrect];
     const nextHistory = [
       ...answerHistory,
@@ -304,30 +341,46 @@ export const LessonPage: React.FC = () => {
   };
 
   const continueLesson = async () => {
+    sounds.playClick();
     if (results.length >= totalQuestions) {
+      sounds.playComplete();
       await lesson.completeSession();
+
+      const correctCount = results.filter(Boolean).length;
+      const newBadgeIds = checkAndAwardLessonBadge(
+        selectedChild.id,
+        lessonChoice.title,
+        correctCount,
+        totalQuestions
+      );
+
       navigate('/reward', {
         state: {
           sessionId: lesson.sessionId,
           childName: selectedChild.name,
           lessonTitle: lessonChoice.title,
           results,
+          newBadgeIds,
         },
       });
       return;
     }
 
     setModal(null);
+    setDroppedAppleIds([]); // Reset các quả táo đã kéo vào giỏ trước khi tạo câu hỏi mới
     await lesson.generateNewQuestion();
   };
 
-  const resetCurrent = () => setDroppedAppleIds([]);
+  const resetCurrent = () => {
+    sounds.playClick();
+    setDroppedAppleIds([]);
+  };
 
   return (
-    <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragEnd={handleDragEnd}>
+    <DndContext sensors={sensors} collisionDetection={pointerWithin} onDragStart={handleDragStart} onDragEnd={handleDragEnd} modifiers={[clampToBounds]}>
       <main className="app-screen overflow-hidden px-5 py-6">
         <div className="screen-top items-center">
-          <button className="circle-button" onClick={() => navigate(backRoute)} aria-label="Quay lại">
+          <button className="circle-button" onClick={() => { sounds.playClick(); navigate(backRoute); }} aria-label="Quay lại">
             ←
           </button>
           <div className="kid-chip">
@@ -350,62 +403,46 @@ export const LessonPage: React.FC = () => {
               <div className="text-[22px] font-extrabold leading-tight">{questionCopy.title}</div>
               <p className="mt-1 text-sm font-extrabold text-gray-500 leading-snug">{questionCopy.text}</p>
             </div>
-            <span className="shrink-0 text-3xl">{theme.basket}</span>
+            <SpeakButton text={questionCopy.text} size="sm" />
           </div>
 
-          <div className="relative mx-auto mt-3 h-[min(42dvh,310px)] min-h-[280px] w-full max-w-[360px] rounded-[22px] bg-white/45">
-            <div className="absolute left-1/2 top-8 z-0 -translate-x-1/2 text-[clamp(130px,42vw,188px)] leading-none opacity-90">{theme.scene}</div>
-            <div className="absolute left-3 top-3 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-extrabold text-gray-500 shadow-sm">
-              Chạm hoặc kéo
+          <div id="drag-bounds" className="relative mx-auto mt-3 w-full max-w-[360px] overflow-hidden rounded-[22px]">
+            {/* Tree area with fruits */}
+            <div className="relative h-[min(42dvh,310px)] min-h-[280px] w-full">
+              <div className="absolute left-1/2 top-8 z-0 -translate-x-1/2 text-[clamp(130px,42vw,188px)] leading-none opacity-90">{theme.scene}</div>
+              {Array.from({ length: availableItems }, (_, index) => {
+                const appleId = `item-${index}`;
+                return (
+                  <DraggableItem
+                    key={appleId}
+                    id={appleId}
+                    position={itemPositions[index % itemPositions.length]}
+                    dropped={droppedAppleIds.includes(appleId)}
+                    item={theme.item}
+                    label={`Kéo ${theme.itemName} vào ${theme.basketName}`}
+                  />
+                );
+              })}
             </div>
-            {Array.from({ length: availableItems }, (_, index) => {
-              const appleId = `item-${index}`;
-              return (
-                <DraggableItem
-                  key={appleId}
-                  id={appleId}
-                  position={itemPositions[index % itemPositions.length]}
-                  dropped={droppedAppleIds.includes(appleId)}
-                  item={theme.item}
-                  label={`Kéo ${theme.itemName} vào ${theme.basketName}`}
-                  onQuickAdd={addItemToBasket}
-                />
-              );
-            })}
-            <BasketDropZone count={selectedApples} target={targetCount} item={theme.item} basket={theme.basket} />
+            {/* Basket below the tree */}
+            <div className="relative mx-auto -mt-4">
+              <BasketDropZone count={selectedApples} item={theme.item} basket={theme.basket} />
+            </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-2 gap-3">
+          <div className="mt-3 text-center text-lg font-extrabold text-gray-500">
+            {selectedApples}/{targetCount}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
             <button className="outline-pill" onClick={resetCurrent} disabled={isSubmitting}>
               Đặt lại
             </button>
             <button className="primary-pill" onClick={confirmAnswer} disabled={isSubmitting}>
-              {isSubmitting ? 'Đang lưu...' : 'Xác nhận'}
+              {isSubmitting ? 'Đang lưu...' : 'Kiểm tra'}
             </button>
           </div>
-
-          <div className="soft-card mt-4 flex justify-around p-3">
-            {Array.from({ length: totalQuestions }, (_, index) => {
-              const result = results[index];
-              return (
-                <button
-                  type="button"
-                  key={index}
-                  onClick={() => (answerHistory[index] ? setReviewIndex(index) : undefined)}
-                  disabled={!answerHistory[index]}
-                  className={`grid h-11 w-11 place-items-center rounded-full font-extrabold ${
-                    result === true
-                      ? 'bg-[#9DE8D0] text-white'
-                      : result === false
-                        ? 'bg-[#FF7A7A] text-white'
-                        : 'bg-gray-100 text-gray-400'
-                  }`}
-                >
-                  {result === true ? '✓' : result === false ? '×' : index + 1}
-                </button>
-              );
-            })}
-          </div>
+          <LessonProgressBar current={results.length} total={totalQuestions} results={results} onDotClick={setReviewIndex} />
         </section>
 
         {modal && (
