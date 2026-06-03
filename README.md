@@ -1,63 +1,130 @@
-# 🧮 NumSense — Math Learning App for Children with Dyscalculia
+# NumSense
 
-A full-stack progressive web app supporting children with dyscalculia through interactive, gamified math lessons with drag-and-drop interfaces, audio feedback, and comprehensive parent dashboards.
+NumSense is a full-stack math learning web app for children, focused on friendly visual interaction, child profiles, parent controls, lesson progress, and gamified practice.
 
-## 🚀 Quick Start
+The app is built for a UI/UX coursework context: mobile-first screens, large touch targets, soft colors, simple interactions, page transitions, and child-friendly animations.
+
+## Main Features
+
+- Child profile selection with default demo profiles:
+  - Be Bo
+  - Be Tho
+  - Be Bi
+  - Be Sao
+- Parent Google OAuth login.
+- Parent dashboard with child profile CRUD:
+  - create child profile
+  - view child profiles
+  - edit name/avatar
+  - update learning configuration
+  - delete local/demo/server profiles
+- Learning configuration per child:
+  - minimum and maximum number range
+  - enabled lessons and operations
+- Interactive child lessons:
+  - counting
+  - addition
+  - subtraction
+  - multiplication groups
+  - division
+  - fractions
+  - clock/time
+  - measurement
+  - subitizing
+  - balance scale
+  - monster challenge
+- Lesson tracking and result saving.
+- Parent progress reports with charts.
+- PWA support.
+- Frontend animations and responsive layout.
+- Render + Vercel deployment support.
+
+## Tech Stack
+
+### Frontend
+
+- React 18
+- Vite
+- TypeScript
+- Tailwind CSS
+- Framer Motion
+- @dnd-kit
+- Recharts
+- Axios
+- vite-plugin-pwa
+
+### Backend
+
+- NestJS
+- TypeScript
+- TypeORM
+- PostgreSQL
+- Passport Google OAuth
+- JWT authentication
+
+## Project Structure
+
+```text
+BTL-UI/
+├── backend/
+│   ├── src/
+│   │   ├── auth/
+│   │   ├── children/
+│   │   ├── lessons/
+│   │   ├── reports/
+│   │   ├── entities/
+│   │   ├── app.module.ts
+│   │   └── main.ts
+│   ├── package.json
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── api/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   ├── styles/
+│   │   ├── types/
+│   │   └── utils/
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── vercel.json
+├── docker-compose.yml
+├── render.yaml
+└── README.md
+```
+
+## Local Development
 
 ### Prerequisites
-- **Docker** & **Docker Compose**
-- **Node.js 18+** (for local development without Docker)
-- **Google OAuth Credentials** ([Create here](https://console.cloud.google.com))
 
-### Setup with Docker (Recommended)
+- Node.js 18 to 22
+- npm
+- Docker, if using local PostgreSQL
+- Google OAuth credentials, if testing Google login
 
-1. **Clone & Enter Repository**
-   ```bash
-   cd /path/to/BTL-UI
-   ```
-
-2. **Configure Environment**
-   ```bash
-   # Backend
-   cp backend/.env.example backend/.env
-   # Edit backend/.env with your Google OAuth credentials and JWT secret
-   
-   # Frontend
-   cp frontend/.env.example frontend/.env
-   ```
-
-3. **Update Google OAuth Settings**
-   In `backend/.env`:
-   ```env
-   GOOGLE_CLIENT_ID=your_client_id_here
-   GOOGLE_CLIENT_SECRET=your_client_secret_here
-   ```
-
-4. **Start All Services**
-   ```bash
-   docker-compose up -d
-   ```
-
-5. **Access Application**
-   - Frontend: http://localhost:5173
-   - Backend API: http://localhost:3001
-   - Database: postgresql://postgres:password@localhost:5432/numsense
-
-### Setup for Local Development
-
-#### Backend (NestJS)
+### Backend Setup
 
 ```bash
 cd backend
 npm install
 cp .env.example .env
-# Edit .env with your credentials
 npm run start:dev
 ```
 
-Backend runs on `http://localhost:3001`
+Backend runs at:
 
-#### Frontend (React + Vite)
+```text
+http://localhost:3001
+```
+
+Health check:
+
+```bash
+curl http://localhost:3001/health
+```
+
+### Frontend Setup
 
 ```bash
 cd frontend
@@ -65,336 +132,255 @@ npm install
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5173`
+Frontend runs at:
 
-#### Database (PostgreSQL)
+```text
+http://localhost:5173
+```
+
+If Linux file watcher limit causes `ENOSPC`, run:
 
 ```bash
-# Using Docker
-docker run --name numsense-db \
-  -e POSTGRES_PASSWORD=password \
-  -e POSTGRES_DB=numsense \
-  -p 5432:5432 \
-  postgres:15
+CHOKIDAR_USEPOLLING=true npm run dev -- --host 0.0.0.0
 ```
 
----
+## Environment Variables
 
-## 📱 User Flows
+### Backend `.env`
 
-### Flow 1: Child Learning Session
-1. **SplashPage** → Choose "Dành Cho Bé" (For Children)
-2. **ChildSelectPage** → Tap profile card (e.g., "Bé Minh")
-3. **LessonPage** → Drag fruits into basket matching the answer
-   - 🎯 5 questions per session
-   - 🔊 Speaker button reads question aloud
-   - 🎵 Audio feedback: success/wrong sounds
-4. **RewardPage** → Celebration with ⭐ rating
+For local PostgreSQL:
 
-### Flow 2: Parent Dashboard
-1. **ParentLoginPage** → Google OAuth login
-2. **ParentDashboard** → View all children, expand each profile
-3. **ProgressReport** → View 7/30/90-day reports
-   - Bar chart: response times
-   - Donut chart: correct vs wrong ratio
-   - Key metrics: accuracy, avg response time
-4. **ChildConfig** → Set number range, allowed operations
+```env
+DATABASE_HOST=localhost
+DATABASE_PORT=5432
+DATABASE_USER=postgres
+DATABASE_PASSWORD=password
+DATABASE_NAME=numsense
 
----
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:3001/auth/google/callback
 
-## 🏗️ Project Structure
+JWT_SECRET=your_long_jwt_secret_min_32_chars
+JWT_EXPIRES_IN=7d
 
-```
-numsense/
-├── backend/                    # NestJS API
-│   ├── src/
-│   │   ├── auth/              # Google OAuth + JWT
-│   │   ├── children/          # Child CRUD + config
-│   │   ├── lessons/           # Question generation + session management
-│   │   ├── reports/           # Analytics & data aggregation
-│   │   ├── entities/          # TypeORM entities
-│   │   ├── app.module.ts
-│   │   └── main.ts
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── Dockerfile
-│
-├── frontend/                   # React + Vite PWA
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── SplashPage.tsx
-│   │   │   ├── ChildSelectPage.tsx
-│   │   │   ├── LessonPage.tsx
-│   │   │   ├── RewardPage.tsx
-│   │   │   ├── ParentLoginPage.tsx
-│   │   │   ├── ParentDashboard.tsx
-│   │   │   ├── ProgressReport.tsx
-│   │   │   └── ChildConfig.tsx
-│   │   ├── components/
-│   │   │   ├── DraggableFruit.tsx
-│   │   │   └── FruitBasket.tsx
-│   │   ├── hooks/
-│   │   │   ├── useAuth.ts
-│   │   │   └── useLesson.ts
-│   │   ├── api/
-│   │   │   └── client.ts
-│   │   ├── types/
-│   │   │   └── index.ts
-│   │   ├── styles/
-│   │   │   └── globals.css
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── vite.config.ts
-│   ├── tailwind.config.ts
-│   ├── postcss.config.js
-│   ├── package.json
-│   ├── tsconfig.json
-│   ├── index.html
-│   └── Dockerfile
-│
-├── docker-compose.yml         # Orchestration
-├── .env.example              # Template
-└── README.md                 # This file
+FRONTEND_URL=http://localhost:5173
+FRONTEND_URLS=http://localhost:5173,http://127.0.0.1:5173
+FRONTEND_PUBLIC_URL=http://localhost:5173
+
+PORT=3001
+NODE_ENV=development
+SEED_DEMO_DATA=true
 ```
 
----
+For Render PostgreSQL external connection, also set:
 
-## 🔌 API Endpoints
-
-### Authentication
-- `GET /auth/google` — Initiate Google OAuth
-- `GET /auth/google/callback` — OAuth callback (returns JWT)
-
-### Children Management (JWT Protected)
-- `POST /children` — Create child profile
-- `GET /children` — List children of logged-in parent
-- `GET /children/:id` — Get child details
-- `PUT /children/:id/config` — Update learning config
-- `DELETE /children/:id` — Delete child profile
-
-### Lessons
-- `POST /lessons/session` — Start new session
-- `POST /lessons/generate-question` — Generate math question
-- `POST /lessons/result` — Save question result
-- `GET /lessons/session/:id/results` — Get session results
-- `POST /lessons/session/:id/complete` — Mark session complete
-
-### Reports (JWT Protected)
-- `GET /reports/:childId?days=7` — Get child report (7/30/90 days)
-- `GET /reports/session/:sessionId/stats` — Get session statistics
-
----
-
-## 🎨 Design System
-
-### Color Palette
-```css
-Primary:     #5BBFB5  /* Soft Teal */
-Secondary:  #FFD89B  /* Warm Peach */
-Accent:     #FFF5D6  /* Pale Yellow */
-Success:    #95D5B2  /* Soft Green */
-Warning:    #FFB4B4  /* Soft Red */
+```env
+DATABASE_URL=postgresql://user:password@host/database
+DATABASE_SSL=true
 ```
 
-### Fonts
-- **Display**: Nunito, Baloo 2 (Google Fonts)
-- **Body**: Nunito (sans-serif)
+### Frontend `.env`
 
-### Touch Targets
-- Minimum: **64×64px** (all interactive elements)
-- Enhanced hover/tap feedback with framer-motion
+Local:
 
----
+```env
+VITE_API_BASE_URL=http://localhost:3001
+```
 
-## 🔧 Technologies
+Production:
 
-### Backend
-- **NestJS** — TypeScript Node framework
-- **PostgreSQL** — Relational database
-- **TypeORM** — ORM
-- **Passport.js** — Authentication (Google OAuth, JWT)
-- **Docker** — Containerization
+```env
+VITE_API_BASE_URL=https://numsense.onrender.com
+```
 
-### Frontend
-- **React 18** — UI library
-- **Vite** — Build tool
-- **Tailwind CSS** — Utility-first styling
-- **@dnd-kit** — Touch-friendly drag & drop
-- **recharts** — Charts (Bar, Pie)
-- **framer-motion** — Animations
-- **@tanstack/react-query** — Data fetching
-- **axios** — HTTP client
-- **vite-plugin-pwa** — PWA support
+## Google OAuth Setup
 
-### Database
-- **PostgreSQL 15** — Primary database
-- **TypeORM** — Schema management
+In Google Cloud Console, configure the OAuth web client.
 
----
+Authorized JavaScript origins:
 
-## 📊 Database Schema
+```text
+http://localhost:5173
+https://numsense-seven.vercel.app
+```
 
-### Parents
-```sql
-CREATE TABLE parents (
-  id UUID PRIMARY KEY,
-  googleId VARCHAR UNIQUE NOT NULL,
-  email VARCHAR UNIQUE NOT NULL,
-  name VARCHAR NOT NULL,
-  createdAt TIMESTAMP DEFAULT NOW()
-);
+Authorized redirect URIs:
+
+```text
+http://localhost:3001/auth/google/callback
+https://numsense.onrender.com/auth/google/callback
+```
+
+If Google shows `Error 401: invalid_client`, check that `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are real credentials and that the callback URL matches exactly.
+
+## API Endpoints
+
+### Auth
+
+```text
+GET  /auth/google
+GET  /auth/google/callback
+GET  /auth/profile
+PUT  /auth/settings
 ```
 
 ### Children
-```sql
-CREATE TABLE children (
-  id UUID PRIMARY KEY,
-  name VARCHAR NOT NULL,
-  avatar VARCHAR,
-  parentId UUID NOT NULL REFERENCES parents(id) ON DELETE CASCADE,
-  minNumber INT DEFAULT 1,
-  maxNumber INT DEFAULT 10,
-  allowedOperations VARCHAR[] DEFAULT '{ADDITION}',
-  createdAt TIMESTAMP DEFAULT NOW()
-);
+
+JWT protected except demo endpoint.
+
+```text
+GET    /children/demo
+POST   /children
+GET    /children
+GET    /children/:id
+PUT    /children/:id
+PUT    /children/:id/config
+DELETE /children/:id
 ```
 
-### Lesson Sessions
-```sql
-CREATE TABLE lesson_sessions (
-  id UUID PRIMARY KEY,
-  childId UUID NOT NULL REFERENCES children(id) ON DELETE CASCADE,
-  startedAt TIMESTAMP DEFAULT NOW(),
-  completedAt TIMESTAMP
-);
+### Lessons
+
+```text
+POST /lessons/session
+POST /lessons/generate-question
+POST /lessons/result
+GET  /lessons/session/:id/results
+POST /lessons/session/:id/complete
 ```
 
-### Question Results
-```sql
-CREATE TABLE question_results (
-  id UUID PRIMARY KEY,
-  sessionId UUID NOT NULL REFERENCES lesson_sessions(id) ON DELETE CASCADE,
-  expression VARCHAR NOT NULL,
-  correct BOOLEAN NOT NULL,
-  responseTimeMs INT,
-  createdAt TIMESTAMP DEFAULT NOW()
-);
+### Reports
+
+```text
+GET /reports/:childId?days=7
+GET /reports/session/:sessionId/stats
 ```
 
----
+## Default Demo Children
 
-## 🧪 Testing
+When no local child profile has been saved, the frontend shows these default profiles:
+
+```text
+Be Bo
+Be Tho
+Be Bi
+Be Sao
+```
+
+These are local demo profiles with ids like `demo-bo`. They are useful for UI demos and child-flow testing without login.
+
+Server-created child profiles use UUID ids from PostgreSQL.
+
+## Build And Test
+
+### Frontend
+
+```bash
+cd frontend
+npm run type-check
+npm run build
+```
 
 ### Backend
+
+```bash
+cd backend
+npm run build
+```
+
+Optional backend test scripts:
+
 ```bash
 npm run test
 npm run test:cov
 ```
 
-### Frontend
-```bash
-npm run lint
-npm run type-check
-```
+## Deployment
 
----
+### Backend On Render
 
-## 📱 PWA Features
+The repository includes `render.yaml`.
 
-- **Offline-First**: Service worker caching
-- **Installable**: Add to home screen
-- **Responsive**: Mobile-first (375px–430px target)
-- **App Manifest**: `NumSense` branding, theme color #5BBFB5
-- **Icons**: 192×192px & 512×512px
+Recommended Render environment variables:
 
----
-
-## 🔐 Security
-
-- ✅ JWT tokens stored in localStorage (production: use httpOnly cookies)
-- ✅ Google OAuth 2.0 for parent authentication
-- ✅ Children sessions stored in sessionStorage (per-browser)
-- ✅ CORS enabled for frontend
-- ✅ Input validation with class-validator
-
----
-
-## 🐛 Troubleshooting
-
-### Google OAuth Not Working
-- Verify `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env`
-- Check redirect URI matches: `http://localhost:3001/auth/google/callback`
-- Add `http://localhost:5173` to authorized origins in Google Cloud Console
-
-### Database Connection Error
-- Ensure PostgreSQL is running: `docker ps`
-- Check `DATABASE_URL` in `.env`
-- Verify password matches: `password`
-
-### Port Already in Use
-```bash
-# Kill process on port
-lsof -ti:3001 | xargs kill -9  # Backend
-lsof -ti:5173 | xargs kill -9  # Frontend
-lsof -ti:5432 | xargs kill -9  # Database
-```
-
----
-
-## 🚀 Deployment
-
-### Docker Compose (Production)
-```bash
-# Build images
-docker-compose build
-
-# Run with environment
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-```
-
-### Environment Variables for Production
-Update `backend/.env`:
 ```env
 NODE_ENV=production
-DATABASE_URL=postgresql://user:password@prod-db:5432/numsense
-GOOGLE_CLIENT_ID=prod_client_id
-GOOGLE_CLIENT_SECRET=prod_secret
-JWT_SECRET=long_random_secret_key_min_32_chars
-FRONTEND_URL=https://yourdomain.com
+DATABASE_SYNCHRONIZE=true
+DATABASE_URL=your_render_postgres_url
+DATABASE_SSL=true
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=https://numsense.onrender.com/auth/google/callback
+JWT_SECRET=your_long_jwt_secret_min_32_chars
+JWT_EXPIRES_IN=7d
+FRONTEND_URL=https://numsense-seven.vercel.app
+FRONTEND_URLS=https://numsense-seven.vercel.app
+FRONTEND_PUBLIC_URL=https://numsense-seven.vercel.app
+SEED_DEMO_DATA=true
 ```
 
----
+After the schema is created successfully, set this to safer value:
 
-## 📝 License
+```env
+DATABASE_SYNCHRONIZE=false
+```
+
+### Frontend On Vercel
+
+Set this Vercel environment variable:
+
+```env
+VITE_API_BASE_URL=https://numsense.onrender.com
+```
+
+Build command:
+
+```bash
+npm run build
+```
+
+Output directory:
+
+```text
+dist
+```
+
+## Common Production Issues
+
+### `POST /children` returns 500
+
+Make sure the deployed backend includes the latest fix that ignores client-provided `id` values during child creation. Server child ids must be generated as PostgreSQL UUID values.
+
+### Child delete returns 401 for `demo-*`
+
+Demo profiles are local-only profiles. The frontend deletes `demo-*` and `local-*` profiles from local storage instead of calling the backend.
+
+### Frontend calls `localhost:3001` in production
+
+Set `VITE_API_BASE_URL` on Vercel:
+
+```env
+VITE_API_BASE_URL=https://numsense.onrender.com
+```
+
+### Vietnamese name displays as mojibake
+
+The frontend includes UTF-8 JWT payload decoding and mojibake repair for parent profile names.
+
+## UI Notes
+
+- The app is mobile-first but has a wider desktop container for presentation.
+- Buttons, cards, child chips, and route transitions include animation.
+- `prefers-reduced-motion` is respected.
+- Touch targets are designed to be large enough for children.
+
+## Security Notes
+
+- Do not commit real `.env` secrets.
+- Rotate secrets if they are exposed.
+- JWT is currently stored in localStorage for simplicity.
+- Production systems should prefer secure HTTP-only cookies.
+
+## License
 
 MIT
-
----
-
-## 👥 Contributing
-
-Contributions welcome! Please:
-1. Fork the repository
-2. Create feature branch: `git checkout -b feature/your-feature`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature/your-feature`
-5. Submit pull request
-
----
-
-## 🎯 Roadmap
-
-- [ ] Mobile app (React Native / Flutter)
-- [ ] Gamification: leaderboards, achievements
-- [ ] Multi-language support (English, Chinese, etc.)
-- [ ] Teacher dashboard for classroom use
-- [ ] Advanced analytics & ML-based difficulty adjustment
-- [ ] Video tutorials & guided lessons
-- [ ] Social features: family challenges
-
----
-
-**NumSense** — Helping children with dyscalculia love mathematics! 🧮✨
