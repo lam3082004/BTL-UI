@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Req } from '@nestjs/common';
 import { ChildrenService } from './children.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CreateChildDto, UpdateChildConfigDto } from './dto';
+import { CreateChildDto, UpdateChildConfigDto, UpdateChildDto } from './dto';
 import { Child } from '../entities/child.entity';
 
 @Controller('children')
@@ -27,8 +27,18 @@ export class ChildrenController {
 
   @Get(':id')
   @UseGuards(JwtAuthGuard)
-  async getChildById(@Param('id') childId: string): Promise<Child> {
-    return this.childrenService.getChildById(childId);
+  async getChildById(@Param('id') childId: string, @Req() req: any): Promise<Child> {
+    return this.childrenService.getChildByIdForParent(childId, req.user.id);
+  }
+
+  @Put(':id')
+  @UseGuards(JwtAuthGuard)
+  async updateChild(
+    @Param('id') childId: string,
+    @Req() req: any,
+    @Body() updateChildDto: UpdateChildDto,
+  ): Promise<Child> {
+    return this.childrenService.updateChild(childId, req.user.id, updateChildDto);
   }
 
   @Put(':id/config')

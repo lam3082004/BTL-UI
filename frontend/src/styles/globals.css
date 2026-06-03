@@ -25,6 +25,11 @@ body {
   color: #2D3436;
 }
 
+.route-shell {
+  min-height: 100dvh;
+  transform-origin: center top;
+}
+
 /* Accessible touch targets */
 @layer components {
   .touch-target {
@@ -92,6 +97,9 @@ body {
 
   .circle-button {
     @apply w-14 h-14 rounded-full bg-white shadow-soft flex items-center justify-center text-3xl text-text transition active:scale-95;
+    transition-duration: 180ms;
+    transition-property: transform, box-shadow, background-color, border-color;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .kid-chip {
@@ -100,6 +108,7 @@ body {
 
   .kid-chip span {
     @apply w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-soft;
+    animation: gentle-bob 3.8s ease-in-out infinite;
   }
 
   .app-title {
@@ -112,18 +121,32 @@ body {
 
   .soft-card {
     @apply bg-white rounded-[24px] shadow-soft border border-gray-100;
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms ease, border-color 180ms ease;
   }
 
   .primary-pill {
     @apply rounded-[18px] bg-[#71C9EE] text-white font-extrabold min-h-touch px-6 transition active:scale-95 disabled:opacity-50;
+    position: relative;
+    overflow: hidden;
+    transition-duration: 180ms;
+    transition-property: transform, box-shadow, filter, background-color;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .outline-pill {
     @apply rounded-[18px] bg-white text-[#71C9EE] border-2 border-[#71C9EE] font-extrabold min-h-touch px-6 transition active:scale-95;
+    position: relative;
+    overflow: hidden;
+    transition-duration: 180ms;
+    transition-property: transform, box-shadow, background-color, border-color;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .lesson-tile {
     @apply aspect-square rounded-[22px] p-5 flex flex-col items-center justify-center gap-5 text-text shadow-soft transition active:scale-95;
+    transition-duration: 190ms;
+    transition-property: transform, box-shadow, filter;
+    transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .lesson-tile strong {
@@ -132,6 +155,75 @@ body {
 
   .lesson-icon {
     @apply w-16 h-16 rounded-full bg-white/70 flex items-center justify-center text-4xl font-extrabold;
+    transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+@media (hover: hover) {
+  .circle-button:hover,
+  .primary-pill:hover,
+  .outline-pill:hover {
+    transform: translateY(-2px) scale(1.015);
+    box-shadow: 0 10px 24px rgba(113, 201, 238, 0.22);
+  }
+
+  .soft-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 28px rgba(45, 52, 54, 0.1);
+  }
+
+  .lesson-tile:hover {
+    transform: translateY(-3px) rotate(-0.5deg);
+    box-shadow: 0 14px 30px rgba(45, 52, 54, 0.13);
+    filter: saturate(1.04);
+  }
+
+  .lesson-tile:hover .lesson-icon {
+    transform: scale(1.08) rotate(3deg);
+  }
+}
+
+.primary-pill::after,
+.outline-pill::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform: translateX(-120%) skewX(-18deg);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.32), transparent);
+}
+
+.primary-pill:hover::after,
+.outline-pill:hover::after {
+  animation: button-sheen 720ms ease;
+}
+
+@keyframes gentle-bob {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-4px) rotate(1.5deg);
+  }
+}
+
+@keyframes button-sheen {
+  from {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(120%) skewX(-18deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

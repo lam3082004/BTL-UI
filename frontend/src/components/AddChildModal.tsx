@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import client from '../api/client';
 import { Child, LessonActivity, MathOperation } from '../types';
@@ -10,19 +10,28 @@ const colors = ['#FFD39A', '#9DD9E8', '#9DE8D0', '#F7A6B8', '#C78BE8'];
 
 interface AddChildModalProps {
   open: boolean;
+  initialChild?: Child | null;
   onClose: () => void;
   onChildAdded: (child: Child) => void;
 }
 
-export const AddChildModal: React.FC<AddChildModalProps> = ({ open, onClose, onChildAdded }) => {
+export const AddChildModal: React.FC<AddChildModalProps> = ({ open, initialChild, onClose, onChildAdded }) => {
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState(avatars[0]);
   const [color, setColor] = useState(colors[0]);
   const [isSaving, setIsSaving] = useState(false);
+  const isEditing = Boolean(initialChild);
+
+  useEffect(() => {
+    if (!open) return;
+    setName(initialChild?.name || '');
+    setAvatar(initialChild?.avatar || avatars[0]);
+    setColor(colors[0]);
+  }, [initialChild, open]);
 
   const resetForm = () => {
-    setName('');
-    setAvatar(avatars[0]);
+    setName(initialChild?.name || '');
+    setAvatar(initialChild?.avatar || avatars[0]);
     setColor(colors[0]);
   };
 
@@ -31,19 +40,22 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({ open, onClose, onC
     if (!name.trim()) return;
 
     const child: Child = {
-      id: `local-${Date.now()}`,
+      ...(initialChild || {}),
+      id: initialChild?.id || `local-${Date.now()}`,
       name: name.trim(),
       avatar,
-      minNumber: 1,
-      maxNumber: 10,
-      allowedOperations: [LessonActivity.COUNTING, MathOperation.ADDITION],
+      minNumber: initialChild?.minNumber || 1,
+      maxNumber: initialChild?.maxNumber || 10,
+      allowedOperations: initialChild?.allowedOperations || [LessonActivity.COUNTING, MathOperation.ADDITION],
     };
 
     setIsSaving(true);
     try {
       const token = localStorage.getItem('jwtToken');
       if (token) {
-        const response = await client.post('/children', child);
+        const response = isEditing
+          ? await client.put(`/children/${child.id}`, { name: child.name, avatar: child.avatar })
+          : await client.post('/children', child);
         onChildAdded(response.data || child);
       } else {
         upsertLocalChild(child);
@@ -92,8 +104,8 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({ open, onClose, onC
               <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-full bg-gradient-to-br from-[#9DE8D0] to-[#71C9EE] text-4xl shadow-md">
                 👶
               </div>
-              <h2 className="text-2xl font-extrabold">Thêm hồ sơ mới</h2>
-              <p className="mt-1 text-sm font-bold text-gray-400">Tạo hồ sơ cho bé yêu</p>
+              <h2 className="text-2xl font-extrabold">{isEditing ? 'Sửa hồ sơ' : 'Thêm hồ sơ mới'}</h2>
+              <p className="mt-1 text-sm font-bold text-gray-400">{isEditing ? 'Cập nhật tên và avatar của bé' : 'Tạo hồ sơ cho bé yêu'}</p>
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -170,7 +182,7 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({ open, onClose, onC
                   disabled={isSaving || !name.trim()}
                   className="rounded-full bg-gradient-to-r from-[#71C9EE] to-[#9DE8D0] py-3 text-base font-extrabold text-white shadow-md transition active:scale-95 disabled:opacity-50"
                 >
-                  {isSaving ? '...' : '✨ Thêm'}
+                  {isSaving ? '...' : isEditing ? 'Lưu' : '✨ Thêm'}
                 </button>
               </div>
             </form>

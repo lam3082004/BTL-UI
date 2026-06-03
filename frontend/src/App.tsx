@@ -1,5 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
 import './styles/globals.css';
 import { SplashPage } from './pages/SplashPage';
 import { ChildSelectPage } from './pages/ChildSelectPage';
@@ -28,15 +29,29 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 
 const queryClient = new QueryClient();
 
-function App() {
+const pageMotion = {
+  initial: { opacity: 0, y: 14, scale: 0.985 },
+  animate: { opacity: 1, y: 0, scale: 1 },
+  exit: { opacity: 0, y: -10, scale: 0.99 },
+};
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
+
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          <PwaStatusBanner />
-          <Routes>
-            {/* Child Routes */}
-            <Route path="/" element={<SplashPage />} />
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        className="route-shell"
+        variants={pageMotion}
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <Routes location={location}>
+          {/* Child Routes */}
+          <Route path="/" element={<SplashPage />} />
           <Route path="/child-select" element={<ChildSelectPage />} />
           <Route path="/child/:childId/home" element={<ChildHomePage />} />
           <Route path="/child/:childId/lessons" element={<LessonSelectPage />} />
@@ -65,6 +80,18 @@ function App() {
           {/* 404 */}
           <Route path="*" element={<SplashPage />} />
         </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <PwaStatusBanner />
+          <AnimatedRoutes />
       </BrowserRouter>
     </QueryClientProvider>
    </ErrorBoundary>

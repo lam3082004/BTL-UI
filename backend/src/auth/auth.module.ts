@@ -8,12 +8,14 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { Parent } from '../entities/parent.entity';
 
+const jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
+
 @Module({
   imports: [
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your_jwt_secret_key',
-      signOptions: { expiresIn: '7d' },
+      signOptions: { expiresIn: jwtExpiresIn as any },
     }),
     TypeOrmModule.forFeature([Parent]),
   ],

@@ -4,8 +4,9 @@ import { motion } from 'framer-motion';
 import client from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { Child, Parent } from '../types';
-import { getChildVisual, getLocalChildren, normalizeChildConfig, setLocalChildren } from '../utils/childVisuals';
+import { getChildVisual, getLocalChildren, normalizeChildConfig, setLocalChildren, upsertLocalChild } from '../utils/childVisuals';
 import { AddChildModal } from '../components/AddChildModal';
+import { decodeJwtPayload, repairMojibake } from '../utils/jwt';
 
 export const ParentDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export const ParentDashboard: React.FC = () => {
   const [expandedChild, setExpandedChild] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingChild, setEditingChild] = useState<Child | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -27,14 +29,9 @@ export const ParentDashboard: React.FC = () => {
   }, [token]);
 
   const buildProfileFromToken = (rawToken: string | null): Parent | null => {
-    if (!rawToken) return null;
-    try {
-      const payload = JSON.parse(window.atob(rawToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-      if (!payload.sub || !payload.email) return null;
-      return { id: payload.sub, googleId: '', email: payload.email, name: payload.name || payload.email, avatarUrl: payload.avatarUrl };
-    } catch {
-      return null;
-    }
+    const payload = decodeJwtPayload<{ sub?: string; email?: string; name?: string; avatarUrl?: string }>(rawToken);
+    if (!payload?.sub || !payload.email) return null;
+    return { id: payload.sub, googleId: '', email: payload.email, name: repairMojibake(payload.name) || payload.email, avatarUrl: payload.avatarUrl };
   };
 
   const fetchDemoChildren = async () => {
@@ -48,7 +45,11 @@ export const ParentDashboard: React.FC = () => {
       const childrenRequest = client.get('/children');
       const [profileResponse, childrenResponse] = await Promise.all([profileRequest, childrenRequest]);
 
-      setParent(profileResponse?.data || buildProfileFromToken(localStorage.getItem('jwtToken')));
+      setParent(
+        profileResponse?.data
+          ? { ...profileResponse.data, name: repairMojibake(profileResponse.data.name) || profileResponse.data.name }
+          : buildProfileFromToken(localStorage.getItem('jwtToken')),
+      );
       if (childrenResponse.data) {
         const sourceChildren = childrenResponse.data;
         const normalizedChildren = sourceChildren.map(normalizeChildConfig);
@@ -68,21 +69,67 @@ export const ParentDashboard: React.FC = () => {
     window.location.href = `${apiBaseUrl}/auth/google`;
   };
 
+  const removeChildLocally = (childId: string) => {
+    const currentChildren = getLocalChildren().filter((c) => c.id !== childId);
+    setLocalChildren(currentChildren);
+    setChildren(currentChildren);
+    if (expandedChild === childId) {
+      setExpandedChild(null);
+    }
+  };
+
   const handleDeleteChild = async (childId: string) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa hồ sơ này?')) return;
+    const isLocalOnlyChild = childId.startsWith('local-') || childId.startsWith('demo-');
+
     try {
-      if (token) {
+      if (token && !isLocalOnlyChild) {
         await client.delete(`/children/${childId}`);
         fetchDashboardData();
       } else {
-        const currentChildren = getLocalChildren().filter((c) => c.id !== childId);
-        setLocalChildren(currentChildren);
-        setChildren(currentChildren);
+        removeChildLocally(childId);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to delete child:', err);
+      if (err?.response?.status === 404) {
+        removeChildLocally(childId);
+        return;
+      }
+      if (err?.response?.status === 401) {
+        alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại rồi xóa hồ sơ trên máy chủ.');
+        return;
+      }
       alert('Không thể xóa. Vui lòng thử lại.');
     }
+  };
+
+  const refreshActiveChild = (child: Child) => {
+    const currentActiveStr = sessionStorage.getItem('selectedChild');
+    if (!currentActiveStr) return;
+
+    try {
+      const currentActive = JSON.parse(currentActiveStr) as Child;
+      if (currentActive.id === child.id) {
+        sessionStorage.setItem('selectedChild', JSON.stringify(normalizeChildConfig(child)));
+      }
+    } catch {
+      // Ignore stale session storage.
+    }
+  };
+
+  const handleChildSaved = (child: Child) => {
+    const normalizedChild = normalizeChildConfig(child);
+    upsertLocalChild(normalizedChild);
+    refreshActiveChild(normalizedChild);
+
+    if (token) {
+      fetchDashboardData();
+    } else {
+      setChildren(getLocalChildren());
+    }
+
+    setShowAddModal(false);
+    setEditingChild(null);
   };
 
   if (isLoading) {
@@ -135,7 +182,10 @@ export const ParentDashboard: React.FC = () => {
             <h2 className="text-2xl font-extrabold">DANH SÁCH TRẺ</h2>
             <button
               className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[#9DE8D0] text-3xl text-white shadow-sm"
-              onClick={() => setShowAddModal(true)}
+              onClick={() => {
+                setEditingChild(null);
+                setShowAddModal(true);
+              }}
               aria-label="Thêm trẻ"
             >
               +
@@ -185,6 +235,15 @@ export const ParentDashboard: React.FC = () => {
 
                   {expanded && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-4 grid grid-cols-2 gap-3 pl-[64px]">
+                      <button
+                        className="rounded-[16px] bg-[#9DE8D0] px-4 py-4 text-white font-extrabold"
+                        onClick={() => {
+                          setEditingChild(child);
+                          setShowAddModal(true);
+                        }}
+                      >
+                        ✏️ Sửa
+                      </button>
                       <button className="rounded-[16px] bg-[#9DD9E8] px-4 py-4 text-white font-extrabold" onClick={() => navigate(`/progress-report/${child.id}`)}>
                         📊 Báo cáo
                       </button>
@@ -216,14 +275,12 @@ export const ParentDashboard: React.FC = () => {
 
       <AddChildModal
         open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onChildAdded={() => {
-          if (token) {
-            fetchDashboardData();
-          } else {
-            setChildren(getLocalChildren());
-          }
+        initialChild={editingChild}
+        onClose={() => {
+          setShowAddModal(false);
+          setEditingChild(null);
         }}
+        onChildAdded={handleChildSaved}
       />
     </main>
   );

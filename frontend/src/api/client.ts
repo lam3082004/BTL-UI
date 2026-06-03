@@ -23,8 +23,7 @@ const inferApiBaseUrl = (): string => {
   if (hostname === 'localhost' || hostname === '127.0.0.1' || /^192\.168\./.test(hostname)) {
     return `${protocol}//${hostname}:3001`;
   }
-  // Production / staging on a real domain: must use VITE_API_BASE_URL
-  return 'http://localhost:3001';
+  return 'https://numsense.onrender.com';
 };
 
 const envBaseUrl = sanitizeApiBaseUrl(import.meta.env.VITE_API_BASE_URL as string | undefined);

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import client from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { Parent } from '../types';
+import { decodeJwtPayload, repairMojibake } from '../utils/jwt';
 
 const settingsKey = 'numsenseParentSettings';
 
@@ -31,20 +32,15 @@ const readSettings = (): ParentSettingsState => {
 };
 
 const decodeParentFromToken = (rawToken: string | null): Parent | null => {
-  if (!rawToken) return null;
-  try {
-    const payload = JSON.parse(window.atob(rawToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-    if (!payload.sub || !payload.email) return null;
-    return {
-      id: payload.sub,
-      googleId: '',
-      email: payload.email,
-      name: payload.name || payload.email,
-      avatarUrl: payload.avatarUrl,
-    };
-  } catch {
-    return null;
-  }
+  const payload = decodeJwtPayload<{ sub?: string; email?: string; name?: string; avatarUrl?: string }>(rawToken);
+  if (!payload?.sub || !payload.email) return null;
+  return {
+    id: payload.sub,
+    googleId: '',
+    email: payload.email,
+    name: repairMojibake(payload.name) || payload.email,
+    avatarUrl: payload.avatarUrl,
+  };
 };
 
 export const ParentSettings: React.FC = () => {
@@ -67,7 +63,7 @@ export const ParentSettings: React.FC = () => {
     client
       .get('/auth/profile')
       .then((response) => {
-        setParent(response.data);
+        setParent({ ...response.data, name: repairMojibake(response.data.name) || response.data.name });
         const backendSettings = {
           soundEnabled: response.data.soundEnabled ?? true,
           animationsEnabled: response.data.animationsEnabled ?? true,

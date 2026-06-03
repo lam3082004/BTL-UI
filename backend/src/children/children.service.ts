@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Child, MathOperation } from '../entities/child.entity';
 import { Parent } from '../entities/parent.entity';
-import { CreateChildDto, UpdateChildConfigDto } from './dto';
+import { CreateChildDto, UpdateChildConfigDto, UpdateChildDto } from './dto';
 
 @Injectable()
 export class ChildrenService implements OnModuleInit {
@@ -130,6 +130,31 @@ export class ChildrenService implements OnModuleInit {
     return child;
   }
 
+  async getChildByIdForParent(childId: string, parentId: string): Promise<Child> {
+    const child = await this.getChildById(childId);
+    this.verifyOwnership(child, parentId);
+    return child;
+  }
+
+  async updateChild(childId: string, parentId: string, updateChildDto: UpdateChildDto): Promise<Child> {
+    const child = await this.getChildById(childId);
+    this.verifyOwnership(child, parentId);
+
+    if (updateChildDto.name !== undefined) {
+      const nextName = updateChildDto.name.trim();
+      if (!nextName) {
+        throw new BadRequestException('Child name cannot be empty');
+      }
+      child.name = nextName;
+    }
+
+    if (updateChildDto.avatar !== undefined) {
+      child.avatar = updateChildDto.avatar;
+    }
+
+    return this.childRepository.save(child);
+  }
+
   async updateChildConfig(
     childId: string,
     parentId: string,
@@ -137,10 +162,7 @@ export class ChildrenService implements OnModuleInit {
   ): Promise<Child> {
     const child = await this.getChildById(childId);
 
-    // Verify ownership
-    if (child.parentId !== parentId) {
-      throw new BadRequestException('Unauthorized to update this child');
-    }
+    this.verifyOwnership(child, parentId);
 
     const nextNumberConfig = this.normalizeNumberConfig(
       updateConfigDto.minNumber ?? child.minNumber,
@@ -159,11 +181,14 @@ export class ChildrenService implements OnModuleInit {
   async deleteChild(childId: string, parentId: string): Promise<void> {
     const child = await this.getChildById(childId);
 
-    // Verify ownership
-    if (child.parentId !== parentId) {
-      throw new BadRequestException('Unauthorized to delete this child');
-    }
+    this.verifyOwnership(child, parentId);
 
     await this.childRepository.remove(child);
+  }
+
+  private verifyOwnership(child: Child, parentId: string) {
+    if (child.parentId !== parentId) {
+      throw new BadRequestException('Unauthorized to access this child');
+    }
   }
 }

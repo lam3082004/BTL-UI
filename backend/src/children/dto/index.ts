@@ -1,5 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsArray, Min, Max, IsEnum } from 'class-validator';
-import { MathOperation } from '../../entities/child.entity';
+import { IsString, IsOptional, IsNumber, IsArray, Min, Max } from 'class-validator';
 
 export class CreateChildDto {
   @IsString()
@@ -40,4 +39,14 @@ export class UpdateChildConfigDto {
   @IsArray()
   @IsString({ each: true })
   allowedOperations?: string[];
+}
+
+export class UpdateChildDto {
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  avatar?: string;
 }
