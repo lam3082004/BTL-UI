@@ -108,7 +108,13 @@ export const getLocalChildren = (): Child[] => {
 
   try {
     const children = JSON.parse(saved) as Child[];
-    return (children.length ? children : demoChildren).map(normalizeChildConfig);
+    const mergedChildren = [...children];
+    demoChildren.forEach((demoChild) => {
+      if (!mergedChildren.some((child) => child.id === demoChild.id)) {
+        mergedChildren.push(demoChild);
+      }
+    });
+    return (mergedChildren.length ? mergedChildren : demoChildren).map(normalizeChildConfig);
   } catch {
     return demoChildren.map(normalizeChildConfig);
   }
