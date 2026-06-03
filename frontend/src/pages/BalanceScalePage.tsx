@@ -121,15 +121,15 @@ export const BalanceScalePage: React.FC = () => {
   const instructionText = `Bên nào ${question.mode === 'larger' ? 'nhiều hơn' : 'ít hơn'}? Bên trái có ${question.left}, bên phải có ${question.right}. Chạm vào bên đó nhé!`;
 
   const renderVisuals = (count: number) => (
-    <div className="flex max-w-[120px] flex-wrap justify-center gap-1">
+    <div className="flex w-full max-w-[108px] flex-wrap justify-center gap-1">
       {Array.from({ length: count }).map((_, i) => (
-        <span key={i} className="text-3xl">{THEME_ITEM}</span>
+        <span key={i} className="text-2xl leading-none sm:text-3xl">{THEME_ITEM}</span>
       ))}
     </div>
   );
 
   return (
-    <main className="app-screen bg-[#F0F9FF]">
+    <main className="app-screen overflow-hidden bg-[#F0F9FF]">
       <div className="flex items-center justify-between p-6">
         <button className="grid h-10 w-10 place-items-center rounded-full bg-white text-xl shadow-sm" onClick={() => { sounds.playClick(); navigate(`/child/${childId}/challenges`); }}>
           ←
@@ -139,21 +139,21 @@ export const BalanceScalePage: React.FC = () => {
       </div>
 
       {status === 'playing' ? (
-        <div className="flex flex-col items-center p-6 text-center mt-4">
-          <h2 className="text-3xl font-extrabold text-gray-700">
+        <div className="mt-4 flex flex-col items-center px-5 pb-6 pt-4 text-center sm:px-6">
+          <h2 className="text-2xl font-extrabold text-gray-700 sm:text-3xl">
             Bên nào {question.mode === 'larger' ? <span className="text-[#FF7A7A]">NHIỀU HƠN</span> : <span className="text-[#9DE8D0]">ÍT HƠN</span>}?
           </h2>
           <p className="mt-2 text-gray-500 font-bold">Chạm vào bên đó nhé!</p>
 
-          <div className="relative mt-24 w-full max-w-[320px]">
+          <div className="relative mt-10 h-[260px] w-full max-w-[390px]">
             <AnimatePresence>
               {feedback === 'correct' && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute -top-32 left-1/2 -translate-x-1/2 text-2xl font-extrabold text-[#9DE8D0] drop-shadow-md bg-white px-4 py-1 rounded-full z-10 whitespace-nowrap">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute -top-8 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-4 py-1 text-lg font-extrabold text-[#9DE8D0] drop-shadow-md sm:text-2xl">
                   Chính xác! Đỉnh quá! ✨
                 </motion.div>
               )}
               {feedback === 'wrong' && (
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute -top-32 left-1/2 -translate-x-1/2 text-2xl font-extrabold text-[#FF7A7A] drop-shadow-md bg-white px-4 py-1 rounded-full z-10 whitespace-nowrap">
+                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute -top-8 left-1/2 z-30 -translate-x-1/2 whitespace-nowrap rounded-full bg-white px-4 py-1 text-lg font-extrabold text-[#FF7A7A] drop-shadow-md sm:text-2xl">
                   Gần đúng rồi! Thử lại ở câu sau nhé!
                 </motion.div>
               )}
@@ -162,14 +162,14 @@ export const BalanceScalePage: React.FC = () => {
             <motion.div
               animate={{ rotate: tilt * 15 }}
               transition={{ type: 'spring', stiffness: 100 }}
-              className="relative h-2 w-full bg-gray-400 rounded-full"
+              className="absolute left-6 right-6 top-[136px] z-10 h-2 origin-center rounded-full bg-gray-400"
             >
               {/* Left Pan */}
               <button
                 type="button"
                 onClick={() => { if (feedback === null) { sounds.playClick(); setSelectedSide('left'); } }}
-                className={`absolute -top-16 left-0 -translate-x-1/2 flex flex-col items-center active:scale-95 transition ${
-                  selectedSide === 'left' ? 'scale-110 ring-4 ring-[#FFD39A]/50 rounded-2xl p-1' : ''
+                className={`absolute -top-[112px] left-0 z-20 flex w-28 origin-bottom flex-col items-center transition active:scale-95 ${
+                  selectedSide === 'left' ? 'scale-105 rounded-2xl ring-4 ring-[#FFD39A]/50' : ''
                 }`}
               >
                 <div className="mb-1 text-2xl font-extrabold text-gray-700 bg-white/60 px-3 rounded-full shadow-sm">{question.left}</div>
@@ -181,8 +181,8 @@ export const BalanceScalePage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => { if (feedback === null) { sounds.playClick(); setSelectedSide('right'); } }}
-                className={`absolute -top-16 right-0 translate-x-1/2 flex flex-col items-center active:scale-95 transition ${
-                  selectedSide === 'right' ? 'scale-110 ring-4 ring-[#9DE8D0]/50 rounded-2xl p-1' : ''
+                className={`absolute -top-[112px] right-0 z-20 flex w-28 origin-bottom flex-col items-center transition active:scale-95 ${
+                  selectedSide === 'right' ? 'scale-105 rounded-2xl ring-4 ring-[#9DE8D0]/50' : ''
                 }`}
               >
                 <div className="mb-1 text-2xl font-extrabold text-gray-700 bg-white/60 px-3 rounded-full shadow-sm">{question.right}</div>
@@ -192,12 +192,12 @@ export const BalanceScalePage: React.FC = () => {
             </motion.div>
 
             {/* The Base */}
-            <div className="absolute left-1/2 -bottom-16 -translate-x-1/2 w-8 h-20 bg-gray-500 rounded-t-full clip-triangle"></div>
-            <div className="absolute left-1/2 -bottom-16 -translate-x-1/2 w-24 h-4 bg-gray-600 rounded-full"></div>
+            <div className="absolute left-1/2 top-[136px] h-20 w-8 -translate-x-1/2 rounded-t-full bg-gray-500 clip-triangle"></div>
+            <div className="absolute left-1/2 top-[202px] h-4 w-24 -translate-x-1/2 rounded-full bg-gray-600"></div>
           </div>
 
           {/* Action buttons */}
-          <div className="mt-20 grid grid-cols-2 gap-4 w-full max-w-[280px]">
+          <div className="mt-4 grid w-full max-w-[280px] grid-cols-2 gap-4">
             <button
               onClick={() => { sounds.playClick(); setSelectedSide(null); setTilt(0); }}
               disabled={feedback !== null}
@@ -215,7 +215,7 @@ export const BalanceScalePage: React.FC = () => {
           </div>
 
           {/* Progress bar at bottom */}
-          <div className="w-full mt-4">
+          <div className="mt-5 w-full">
             <LessonProgressBar current={questionIndex} total={totalQuestions} results={results} />
           </div>
         </div>
