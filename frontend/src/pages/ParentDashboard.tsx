@@ -53,8 +53,8 @@ export const ParentDashboard: React.FC = () => {
       if (childrenResponse.data) {
         const sourceChildren = childrenResponse.data;
         const normalizedChildren = sourceChildren.map(normalizeChildConfig);
-        setChildren(normalizedChildren);
         setLocalChildren(normalizedChildren);
+        setChildren(getLocalChildren());
       }
     } catch (err) {
       console.error('Failed to fetch dashboard data:', err);
