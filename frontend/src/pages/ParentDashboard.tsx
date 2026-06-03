@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import client from '../api/client';
 import { useAuth } from '../hooks/useAuth';
 import { Child, Parent } from '../types';
-import { getChildVisual, getLocalChildren, normalizeChildConfig, setLocalChildren, upsertLocalChild } from '../utils/childVisuals';
+import { getChildVisual, getLocalChildren, normalizeChildConfig, removeLocalChild, setLocalChildren, upsertLocalChild } from '../utils/childVisuals';
 import { AddChildModal } from '../components/AddChildModal';
 import { decodeJwtPayload, repairMojibake } from '../utils/jwt';
 
@@ -70,8 +70,7 @@ export const ParentDashboard: React.FC = () => {
   };
 
   const removeChildLocally = (childId: string) => {
-    const currentChildren = getLocalChildren().filter((c) => c.id !== childId);
-    setLocalChildren(currentChildren);
+    const currentChildren = removeLocalChild(childId);
     setChildren(currentChildren);
     if (expandedChild === childId) {
       setExpandedChild(null);

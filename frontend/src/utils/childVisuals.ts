@@ -65,6 +65,7 @@ export const demoChildren: Child[] = [
 ];
 
 const localChildrenKey = 'numsenseLocalChildren';
+const deletedDemoChildrenKey = 'numsenseDeletedDemoChildren';
 
 export const maxVisualNumber = 12;
 
@@ -102,21 +103,44 @@ export const toBackendOperations = (enabledLessons: EnabledLesson[]): string[] =
   return enabledLessons.length ? (enabledLessons as string[]) : [MathOperation.ADDITION];
 };
 
+const getDeletedDemoChildIds = (): string[] => {
+  try {
+    const saved = localStorage.getItem(deletedDemoChildrenKey);
+    return saved ? (JSON.parse(saved) as string[]) : [];
+  } catch {
+    return [];
+  }
+};
+
+const getAvailableDemoChildren = (): Child[] => {
+  const deletedIds = new Set(getDeletedDemoChildIds());
+  return demoChildren.filter((child) => !deletedIds.has(child.id));
+};
+
+const rememberDeletedDemoChild = (childId: string) => {
+  if (!childId.startsWith('demo-')) return;
+
+  const deletedIds = new Set(getDeletedDemoChildIds());
+  deletedIds.add(childId);
+  localStorage.setItem(deletedDemoChildrenKey, JSON.stringify(Array.from(deletedIds)));
+};
+
 export const getLocalChildren = (): Child[] => {
   const saved = localStorage.getItem(localChildrenKey);
-  if (!saved) return demoChildren.map(normalizeChildConfig);
+  const availableDemoChildren = getAvailableDemoChildren();
+  if (!saved) return availableDemoChildren.map(normalizeChildConfig);
 
   try {
     const children = JSON.parse(saved) as Child[];
     const mergedChildren = [...children];
-    demoChildren.forEach((demoChild) => {
+    availableDemoChildren.forEach((demoChild) => {
       if (!mergedChildren.some((child) => child.id === demoChild.id)) {
         mergedChildren.push(demoChild);
       }
     });
-    return (mergedChildren.length ? mergedChildren : demoChildren).map(normalizeChildConfig);
+    return mergedChildren.map(normalizeChildConfig);
   } catch {
-    return demoChildren.map(normalizeChildConfig);
+    return availableDemoChildren.map(normalizeChildConfig);
   }
 };
 
@@ -129,6 +153,13 @@ export const upsertLocalChild = (child: Child) => {
   const children = getLocalChildren();
   const exists = children.some((item) => item.id === normalizedChild.id);
   const next = exists ? children.map((item) => (item.id === normalizedChild.id ? normalizedChild : item)) : [...children, normalizedChild];
+  setLocalChildren(next);
+  return next;
+};
+
+export const removeLocalChild = (childId: string): Child[] => {
+  rememberDeletedDemoChild(childId);
+  const next = getLocalChildren().filter((child) => child.id !== childId);
   setLocalChildren(next);
   return next;
 };
