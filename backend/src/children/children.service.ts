@@ -99,8 +99,14 @@ export class ChildrenService implements OnModuleInit {
 
   async createChild(parentId: string, createChildDto: CreateChildDto): Promise<Child> {
     const numberConfig = this.normalizeNumberConfig(createChildDto.minNumber, createChildDto.maxNumber);
+    const name = createChildDto.name.trim();
+    if (!name) {
+      throw new BadRequestException('Child name cannot be empty');
+    }
+
     const child = this.childRepository.create({
-      ...createChildDto,
+      name,
+      avatar: createChildDto.avatar,
       ...numberConfig,
       parentId,
       allowedOperations: this.normalizeAllowedOperations(createChildDto.allowedOperations),

@@ -55,7 +55,13 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({ open, initialChild
       if (token) {
         const response = isEditing
           ? await client.put(`/children/${child.id}`, { name: child.name, avatar: child.avatar })
-          : await client.post('/children', child);
+          : await client.post('/children', {
+              name: child.name,
+              avatar: child.avatar,
+              minNumber: child.minNumber,
+              maxNumber: child.maxNumber,
+              allowedOperations: child.allowedOperations,
+            });
         onChildAdded(response.data || child);
       } else {
         upsertLocalChild(child);
@@ -65,12 +71,16 @@ export const AddChildModal: React.FC<AddChildModalProps> = ({ open, initialChild
       resetForm();
       onClose();
     } catch (err) {
-      upsertLocalChild(child);
-      onChildAdded(child);
-      sounds.playSuccess();
-      resetForm();
-      onClose();
       console.error(err);
+      if (localStorage.getItem('jwtToken')) {
+        alert('Không thể lưu hồ sơ lên máy chủ. Vui lòng thử lại hoặc đăng nhập lại.');
+      } else {
+        upsertLocalChild(child);
+        onChildAdded(child);
+        sounds.playSuccess();
+        resetForm();
+        onClose();
+      }
     } finally {
       setIsSaving(false);
     }
