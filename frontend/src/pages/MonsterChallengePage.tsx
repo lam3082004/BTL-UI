@@ -63,10 +63,10 @@ const HpBar: React.FC<{ hp: number; maxHp: number; label: string; isPlayer: bool
       : 'rgba(255, 107, 107, 0.4)';
 
   return (
-    <div className="flex flex-col w-36 sm:w-44 text-left">
-      <div className="flex items-center justify-between mb-1.5 px-1">
-        <span className="text-xs font-black uppercase tracking-wider text-gray-300">{label}</span>
-        <span className="text-xs font-black text-white/80">{hp}/{maxHp} HP</span>
+    <div className="flex w-full min-w-0 flex-col text-left">
+      <div className="mb-1.5 flex min-w-0 items-center justify-between gap-2 px-1">
+        <span className="min-w-0 truncate text-[11px] font-black uppercase tracking-wider text-gray-300 sm:text-xs">{label}</span>
+        <span className="shrink-0 text-[11px] font-black text-white/80 sm:text-xs">{hp}/{maxHp} HP</span>
       </div>
       <div className="relative h-4 w-full rounded-full bg-white/10 p-0.5 overflow-hidden border border-white/10 shadow-[inset_0_1px_4px_rgba(0,0,0,0.3)]">
         <motion.div
@@ -171,34 +171,34 @@ export const MonsterChallengePage: React.FC = () => {
       </div>
 
       {status === 'playing' ? (
-        <div className="flex h-full flex-col p-6 pt-0 relative z-10">
+        <div className="relative z-10 flex min-h-[calc(100dvh-88px)] flex-col p-4 pt-0 sm:p-6 sm:pt-0">
           {/* Health Bars */}
-          <div className="flex items-center justify-between px-2 mt-2">
-            <div className={`transition-all rounded-2xl p-2.5 border border-white/5 backdrop-blur-sm bg-white/5 ${playerAnim}`}>
+          <div className="mt-2 grid w-full grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2">
+            <div className={`min-w-0 transition-all rounded-2xl border border-white/5 bg-white/5 p-2 backdrop-blur-sm sm:p-2.5 ${playerAnim}`}>
               <HpBar hp={playerHp} maxHp={MAX_HP} label={child?.name || 'Bé'} isPlayer={true} />
             </div>
-            <div className="text-center mx-2">
-              <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-amber-500 italic drop-shadow-[0_2px_8px_rgba(234,179,8,0.5)]">VS</span>
+            <div className="px-0.5 text-center sm:px-1">
+              <span className="bg-gradient-to-b from-yellow-300 to-amber-500 bg-clip-text text-xl font-black italic text-transparent drop-shadow-[0_2px_8px_rgba(234,179,8,0.5)] sm:text-3xl">VS</span>
             </div>
-            <div className="rounded-2xl p-2.5 border border-white/5 backdrop-blur-sm bg-white/5 text-right">
+            <div className="min-w-0 rounded-2xl border border-white/5 bg-white/5 p-2 text-right backdrop-blur-sm sm:p-2.5">
               <HpBar hp={monsterHp} maxHp={MAX_HP} label="Quái Vật" isPlayer={false} />
             </div>
           </div>
 
           {/* Monster Arena with podiums */}
-          <div className="relative mt-8 flex h-48 items-center justify-between px-8">
+          <div className="relative mt-6 flex h-40 items-center justify-between px-2 sm:mt-8 sm:h-48 sm:px-8">
             {/* Player Avatar & Platform */}
             <div className="relative flex flex-col items-center">
               <motion.div
                 animate={playerAnim ? { x: [-12, 12, -12, 12, 0] } : { y: [-3, 3, -3] }}
                 transition={{ repeat: playerAnim ? 0 : Infinity, duration: playerAnim ? 0.35 : 2.5 }}
-                className="grid h-24 w-24 place-items-center rounded-full text-6xl shadow-[0_0_20px_rgba(255,255,255,0.2)] border-4 border-white/90 relative z-10"
+                className="relative z-10 grid h-20 w-20 place-items-center rounded-full border-4 border-white/90 text-5xl shadow-[0_0_20px_rgba(255,255,255,0.2)] sm:h-24 sm:w-24 sm:text-6xl"
                 style={{ backgroundColor: visual.color }}
               >
                 {visual.avatar}
               </motion.div>
               {/* Podium */}
-              <div className="absolute -bottom-3 h-5 w-28 rounded-full bg-cyan-500/20 blur-[2px] border border-cyan-500/30 shadow-[0_0_15px_rgba(6,182,212,0.4)]" />
+              <div className="absolute -bottom-3 h-5 w-24 rounded-full border border-cyan-500/30 bg-cyan-500/20 blur-[2px] shadow-[0_0_15px_rgba(6,182,212,0.4)] sm:w-28" />
             </div>
 
             {/* Battle Clash sparks when hits */}
@@ -220,17 +220,17 @@ export const MonsterChallengePage: React.FC = () => {
               <motion.div
                 animate={monsterAnim ? { x: [-12, 12, -12, 12, 0], filter: 'brightness(2)' } : { y: [-6, 6, -6] }}
                 transition={{ repeat: monsterAnim ? 0 : Infinity, duration: monsterAnim ? 0.35 : 2.2 }}
-                className="text-9xl drop-shadow-[0_0_25px_rgba(255,122,122,0.6)] relative z-10"
+                className="relative z-10 text-7xl drop-shadow-[0_0_25px_rgba(255,122,122,0.6)] sm:text-9xl"
               >
                 👾
               </motion.div>
               {/* Podium */}
-              <div className="absolute -bottom-3 h-5 w-32 rounded-full bg-rose-500/20 blur-[2px] border border-rose-500/30 shadow-[0_0_15px_rgba(244,63,94,0.4)]" />
+              <div className="absolute -bottom-3 h-5 w-24 rounded-full border border-rose-500/30 bg-rose-500/20 blur-[2px] shadow-[0_0_15px_rgba(244,63,94,0.4)] sm:w-32" />
             </div>
           </div>
 
           {/* Question Box (Concrete Math) */}
-          <div className="mt-8 rounded-[28px] bg-white/10 p-5 backdrop-blur-md text-center shadow-lg border border-white/15 relative">
+          <div className="relative mt-6 rounded-[28px] border border-white/15 bg-white/10 p-4 text-center shadow-lg backdrop-blur-md sm:mt-8 sm:p-5">
             <AnimatePresence>
               {feedback === 'correct' && (
                 <motion.div initial={{ opacity: 0, y: 15, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} className="absolute -top-6 left-1/2 -translate-x-1/2 text-sm font-black text-[#9DE8D0] bg-white/15 border border-[#9DE8D0]/30 backdrop-blur px-5 py-1.5 rounded-full shadow-md whitespace-nowrap uppercase tracking-wider">
@@ -244,30 +244,30 @@ export const MonsterChallengePage: React.FC = () => {
               )}
             </AnimatePresence>
             
-            <div className="flex items-center justify-center gap-5">
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-3.5 w-28 flex flex-col items-center shadow-inner">
-                <span className="text-4xl font-black text-white mb-2">{question.a}</span>
+            <div className="flex items-center justify-center gap-3 sm:gap-5">
+              <div className="flex w-[88px] flex-col items-center rounded-2xl border border-white/10 bg-white/5 p-3 shadow-inner sm:w-28 sm:p-3.5">
+                <span className="mb-2 text-3xl font-black text-white sm:text-4xl">{question.a}</span>
                 {renderVisuals(question.a)}
               </div>
-              <div className="text-4xl font-black text-[#9DE8D0] drop-shadow">+</div>
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-3.5 w-28 flex flex-col items-center shadow-inner">
-                <span className="text-4xl font-black text-white mb-2">{question.b}</span>
+              <div className="text-3xl font-black text-[#9DE8D0] drop-shadow sm:text-4xl">+</div>
+              <div className="flex w-[88px] flex-col items-center rounded-2xl border border-white/10 bg-white/5 p-3 shadow-inner sm:w-28 sm:p-3.5">
+                <span className="mb-2 text-3xl font-black text-white sm:text-4xl">{question.b}</span>
                 {renderVisuals(question.b)}
               </div>
             </div>
           </div>
 
           {/* Options */}
-          <div className="mt-8 grid grid-cols-1 gap-4 pb-8 flex-1 justify-end">
+          <div className="mt-6 grid flex-1 grid-cols-1 content-end gap-3 pb-6 sm:mt-8 sm:gap-4 sm:pb-8">
             {question.options.map((opt, i) => (
               <button
                 key={i}
                 onClick={() => { sounds.playClick(); handleAnswer(opt); }}
-                className="flex items-center justify-center gap-5 rounded-[22px] bg-gradient-to-r from-[#54C2F0] to-[#9DE8D0] py-4 text-3xl font-black shadow-md border-b-4 border-cyan-600 active:border-b-0 active:scale-95 transition-all"
+                className="grid min-h-[68px] grid-cols-[3rem_auto_minmax(0,1fr)] items-center gap-3 rounded-[22px] border-b-4 border-cyan-600 bg-gradient-to-r from-[#54C2F0] to-[#9DE8D0] px-4 py-3 text-3xl font-black shadow-md transition-all active:scale-95 active:border-b-0 sm:min-h-[76px] sm:gap-5 sm:py-4"
               >
-                <span>{opt}</span>
+                <span className="justify-self-end">{opt}</span>
                 <span className="opacity-30 text-xl font-normal">|</span>
-                <div className="scale-75 flex justify-center">{renderVisuals(opt)}</div>
+                <div className="min-w-0 scale-75">{renderVisuals(opt)}</div>
               </button>
             ))}
           </div>
